@@ -1,10 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
-export function MyCard() {
+//鼠标悬浮时显示遮罩层，点击卡片进入详情页
+export function MyCard({ className }: { className?: string }) {
   return (
-    <Card className="relative mx-auto w-full max-w-sm pt-0">
+    <Card className={cn("relative mx-auto w-full max-w-sm pt-0", className)}>
       <div className="absolute inset-0 z-30 aspect-video bg-black/35" />
       <img
         src="#"

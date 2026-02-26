@@ -1,12 +1,12 @@
 import Image from "next/image";
-import HeroSection from "./components/hero-section";
 import Recommendations from "./components/recommendations";
+import HeroSection from "./components/hero-section";
 
 export default function Home() {
   return (
     <div>
       <HeroSection />
-      <Recommendations className="h-[1000px]" />
+      <Recommendations />
     </div>
   );
 }

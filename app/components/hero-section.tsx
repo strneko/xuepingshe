@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // 交互特效：
 // 鼠标移动时，背景中的图形元素（如书本、灯泡、评分星）轻微跟随位移（Parallax 效果）
 // 可用 Rellax.js 或纯 CSS transform: translate() 实现
-
+// 点击下滑至推荐内容区的按钮
 export default function HeroSection() {
   const SearchInput = dynamic(() => import("@globalComponents/search-input"), {
     ssr: false,
