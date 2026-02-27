@@ -3,11 +3,13 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   inputClassName?: string;
 }
 
 export default function SearchInput({ className, inputClassName, ...props }: SearchInputProps) {
+  const router = useRouter();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     //搜索联想
   };
@@ -16,7 +18,7 @@ export default function SearchInput({ className, inputClassName, ...props }: Sea
       return;
     }
     const value = e.currentTarget.value;
-    alert(`搜索：${value}，跳转搜索结果页`); // TODO: 跳转搜索结果页
+    router.push(`/search_result?keyword=${value}`);
   };
   return (
     <div className={cn("relative w-[30vw]", className)}>

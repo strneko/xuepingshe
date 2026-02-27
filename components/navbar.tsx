@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const SearchInput = dynamic(() => import("./search-input"), {
   ssr: false,
@@ -13,8 +14,12 @@ const SearchInput = dynamic(() => import("./search-input"), {
 
 export default function Navbar() {
   const [showSearch, setShowSearch] = useState(false);
-
+  const pathname = usePathname();
   useEffect(() => {
+    if (pathname !== "/") {
+      setShowSearch(true);
+      return;
+    }
     const target = document.getElementById("hero-search");
     if (!target) {
       setShowSearch(true);
@@ -30,7 +35,7 @@ export default function Navbar() {
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
   return (
     <nav className="sticky top-0 z-50 flex w-full h-16 px-4 border-b shadow-sm items-center justify-between bg-background">
