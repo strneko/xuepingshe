@@ -18,7 +18,7 @@ export default function SearchInput({ className, inputClassName, ...props }: Sea
       return;
     }
     const value = e.currentTarget.value;
-    router.push(`/search_result?keyword=${value}`);
+    router.push(`/search_result?keyword=${encodeURIComponent(value)}`);
   };
   return (
     <div className={cn("relative w-[30vw]", className)}>

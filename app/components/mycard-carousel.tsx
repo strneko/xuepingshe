@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import Autoplay from "embla-carousel-autoplay";
-import { MyCard } from "@/components/mycard";
+import { DefaultCard } from "@/components/default-card";
 import { cn } from "@/lib/utils";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
@@ -24,7 +24,7 @@ export function MyCardCarousel({ className }: { className?: string }) {
         {Array.from({ length: 5 }).map((_, index) => (
           <CarouselItem key={index} className="basis-1/2 ">
             <div className="p-1">
-              <MyCard />
+              <DefaultCard />
             </div>
           </CarouselItem>
         ))}

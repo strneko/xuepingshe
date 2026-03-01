@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MyCard } from "@/components/mycard";
+import { DefaultCard } from "@/components/default-card";
 
 interface SearchPageProps {
   results: number[];
@@ -65,7 +65,7 @@ export default function ResultsList({ results }: SearchPageProps) {
     <div>
       <div className="grid grid-cols-4 place-items-center mb-5 mt-2">
         {items.map((itemId, index) => (
-          <MyCard key={`${itemId}-${index}`} />
+          <DefaultCard key={`${itemId}-${index}`} />
         ))}
       </div>
       <div ref={sentinelRef} className="h-8" />

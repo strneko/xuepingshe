@@ -1,8 +1,8 @@
-import { MyCard } from "@/components/mycard";
+import { DefaultCard } from "@/components/default-card";
 import CategoriesBar from "./components/categories_bar";
 import ResultsList from "./components/results_list";
 
-export const enum SearchCategory {
+export enum SearchCategory {
   All = 0,
   Teacher,
   Course,

@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 //鼠标悬浮时显示遮罩层，点击卡片进入详情页
-export function MyCard({ className }: { className?: string }) {
+export function DefaultCard({ className }: { className?: string }) {
   return (
     <Dialog>
       <Card className={cn("relative mx-auto w-full max-w-sm pt-0", className)}>

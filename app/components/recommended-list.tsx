@@ -1,4 +1,4 @@
-import { MyCard } from "@/components/mycard";
+import { DefaultCard } from "@/components/default-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,7 @@ export default function RecommendedList({ className, items, onRefresh, isRefresh
                 </div>
               </div>
             ))
-          : items.map((itemId) => <MyCard key={itemId} />)}
+          : items.map((itemId) => <DefaultCard key={itemId} />)}
       </div>
     </div>
   );
