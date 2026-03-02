@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import CoursesList from "./components/courses-list";
 import Filter from "./components/filter";
+import Pagination from "./components/pagination";
 import { Loader2 } from "lucide-react";
 
 export interface CourseCardProps {
@@ -21,10 +22,17 @@ interface MyClassPageProps {
   searchParams: {
     unevaluated?: "true" | "false";
     sort?: "asc" | "desc";
+    keyword?: string;
+    page?: string;
   };
 }
 // 模拟从数据库获取数据的函数
-async function getCourses(searchParams: { unevaluated?: "true" | "false"; sort?: "asc" | "desc" }) {
+async function getCourses(searchParams: {
+  unevaluated?: "true" | "false";
+  sort?: "asc" | "desc";
+  keyword?: string;
+  page?: string;
+}) {
   // 执行 SQL: SELECT * FROM courses WHERE ... ORDER BY ...
   // 模拟延迟
   await new Promise((resolve) => setTimeout(resolve, 500));
@@ -87,6 +95,11 @@ async function getCourses(searchParams: { unevaluated?: "true" | "false"; sort?:
     result = result.filter((c) => !c.isEvaluated);
   }
 
+  if (searchParams.keyword?.trim()) {
+    const normalizedKeyword = searchParams.keyword.trim().toLowerCase();
+    result = result.filter((c) => c.courseName.toLowerCase().includes(normalizedKeyword));
+  }
+
   // 服务端排序
   const sortOrder = searchParams.sort === "desc" ? -1 : 1; // asc=default
   result.sort((a, b) => {
@@ -95,12 +108,25 @@ async function getCourses(searchParams: { unevaluated?: "true" | "false"; sort?:
     return (dateA - dateB) * sortOrder;
   });
 
-  return result;
+  const pageSize = 2; //Consider making this a configurable constant or parameter to improve maintainability and allow easier adjustments.
+
+  const total = result.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const rawPage = Number(searchParams.page ?? "1");
+  const currentPage = Number.isFinite(rawPage) ? Math.min(Math.max(1, rawPage), totalPages) : 1;
+  const start = (currentPage - 1) * pageSize;
+  const pagedCourses = result.slice(start, start + pageSize);
+
+  return {
+    courses: pagedCourses,
+    currentPage,
+    totalPages,
+  };
 }
 
 export default async function MyClassPage({ searchParams }: MyClassPageProps) {
   const params = await searchParams;
-  const courses = await getCourses(params);
+  const { courses, currentPage, totalPages } = await getCourses(params);
   return (
     <div>
       <Filter />
@@ -113,6 +139,7 @@ export default async function MyClassPage({ searchParams }: MyClassPageProps) {
       >
         <CoursesList courses={courses} />
       </Suspense>
+      <Pagination currentPage={currentPage} totalPages={totalPages} />
     </div>
   );
 }

@@ -17,7 +17,11 @@ export default function Navbar() {
   const pathname = usePathname();
   useEffect(() => {
     if (pathname !== "/") {
-      setShowSearch(true);
+      if (pathname === "/myclass") {
+        setShowSearch(false);
+      } else {
+        setShowSearch(true);
+      }
       return;
     }
     const target = document.getElementById("hero-search");
@@ -38,11 +42,11 @@ export default function Navbar() {
   }, [pathname]);
 
   return (
-    <nav className="sticky top-0 z-50 flex w-full h-16 px-4 border-b shadow-sm items-center justify-between bg-background">
+    <nav className="sticky top-0 z-50 flex w-full h-16 px-[10vw] border-b shadow-sm items-center justify-between bg-background">
       <div className="justify-start items-center flex flex-row gap-6">
         <div>logo</div>
         <Link href="/">首页</Link>
-        <Link href="/myclass">我的课程</Link>
+        <Link href="/myclass?unevaluated=true">评教</Link>
         <Link href="/profile">个人中心</Link>
       </div>
       {showSearch ? <SearchInput /> : <div />}
