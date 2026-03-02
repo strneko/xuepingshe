@@ -2,47 +2,58 @@
 
 import * as React from "react";
 import { DefaultCard } from "@/components/default-card";
-
-interface SearchPageProps {
-  results: number[];
-}
-
+import { useSearchParams } from "next/navigation";
+import { SearchCategory } from "../page";
 // 向下滚动时,如果距离底部不足100px,则加载下一页数据.每页20条数据
 // TODO:高亮关键词 排序
-export default function ResultsList({ results }: SearchPageProps) {
-  const pageSize = results.length || 20;
-  const [items, setItems] = React.useState<number[]>(results);
-  const [page, setPage] = React.useState(1);
+
+export default function ResultsList() {
+  const searchParams = useSearchParams();
+  const keyword = searchParams.get("keyword") ?? "";
+  const category = Number(searchParams.get("category") ?? "0");
+  const pageSize = Number(searchParams.get("pageSize") ?? "20");
+
+  const [items, setItems] = React.useState<number[]>([]);
+  const [nextPage, setNextPage] = React.useState(1);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [hasMore, setHasMore] = React.useState(true);
   const isLoadingRef = React.useRef(false);
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
 
-  React.useEffect(() => {
-    setItems(results);
-    setPage(1);
-  }, [results]); //父组件传入新的搜索结果时,重置列表数据和页码
+  const fetchPage = React.useCallback(
+    async (page: number, reset = false) => {
+      if (isLoadingRef.current) return;
+      isLoadingRef.current = true;
+      setIsLoading(true);
 
-  const hasMore = page < 5;
+      try {
+        // TODO: 替换为真实 API，请携带 keyword/category/page/pageSize
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        const batch = Array.from({ length: pageSize }, (_, i) => category * 100000 + (page - 1) * pageSize + i);
+        setItems((prev) => (reset ? batch : [...prev, ...batch]));
+        setNextPage(page + 1);
+        setHasMore(page < 5);
+      } finally {
+        isLoadingRef.current = false;
+        setIsLoading(false);
+      }
+    },
+    [category, keyword, pageSize],
+  );
+
+  // keyword/category 变化时，只重刷列表
+  React.useEffect(() => {
+    setItems([]);
+    setNextPage(1);
+    setHasMore(true);
+    void fetchPage(1, true);
+  }, [fetchPage]);
 
   const loadMore = React.useCallback(async () => {
-    if (isLoadingRef.current || !hasMore) return;
-    isLoadingRef.current = true;
-    setIsLoading(true);
-
-    try {
-      // TODO: replace with backend API call.
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setItems((prev) => {
-        const start = prev.length;
-        const more = Array.from({ length: pageSize }, (_, index) => start + index);
-        return [...prev, ...more];
-      });
-      setPage((prev) => prev + 1);
-    } finally {
-      isLoadingRef.current = false;
-      setIsLoading(false);
-    }
-  }, [hasMore, pageSize]);
+    if (!hasMore) return;
+    await fetchPage(nextPage, false);
+  }, [fetchPage, hasMore, nextPage]);
 
   React.useEffect(() => {
     const target = sentinelRef.current;
