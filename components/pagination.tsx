@@ -1,16 +1,17 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
+  pageParam?: string;
 }
 
 type PaginationItem = number | "ellipsis";
 
-export default function Pagination({ currentPage, totalPages }: PaginationProps) {
+export default function Pagination({ currentPage, totalPages, pageParam = "page" }: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -34,9 +35,9 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
   const updatePage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (page <= 1) {
-      params.delete("page");
+      params.delete(pageParam);
     } else {
-      params.set("page", String(page));
+      params.set(pageParam, String(page));
     }
 
     const query = params.toString();

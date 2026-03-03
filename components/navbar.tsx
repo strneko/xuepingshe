@@ -1,11 +1,11 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import UserHover from "./user-hover";
 
 const SearchInput = dynamic(() => import("./search-input"), {
   ssr: false,
@@ -50,11 +50,7 @@ export default function Navbar() {
         <Link href="/profile">个人中心</Link>
       </div>
       {showSearch ? <SearchInput /> : <div />}
-      <Avatar className="justify-end items-center">
-        {/* TODO: 用户头像悬浮卡片 */}
-        <AvatarImage src="#" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
+      <UserHover />
     </nav>
   );
 }

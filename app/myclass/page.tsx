@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import CoursesList from "./components/courses-list";
 import Filter from "./components/filter";
-import Pagination from "./components/pagination";
+import Pagination from "@/components/pagination";
 import { Loader2 } from "lucide-react";
 
 export interface CourseCardProps {
