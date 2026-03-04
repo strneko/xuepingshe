@@ -8,7 +8,8 @@ export default function CoursesList({ courses: classes }: CourseListProps) {
     <div className="flex flex-col items-center space-y-6 py-8">
       {classes.map((course) => (
         <CourseCard
-          key={course.courseName}
+          key={course.courseId}
+          courseId={course.courseId}
           courseName={course.courseName}
           teacher={course.teacher}
           location={course.location}

@@ -5,6 +5,7 @@ import Pagination from "@/components/pagination";
 import { Loader2 } from "lucide-react";
 
 export interface CourseCardProps {
+  courseId: number;
   courseName: string;
   teacher: string;
   location: string;
@@ -39,7 +40,7 @@ async function getCourses(searchParams: {
 
   const allCourses = [
     {
-      id: 1,
+      courseId: 1,
       courseName: "高等数学",
       deadline: "2026-03-15",
       isEvaluated: false,
@@ -51,7 +52,7 @@ async function getCourses(searchParams: {
       credits: "4.0",
     },
     {
-      id: 2,
+      courseId: 2,
       courseName: "计算机基础",
       deadline: "2026-03-05",
       isEvaluated: true,
@@ -63,7 +64,7 @@ async function getCourses(searchParams: {
       credits: "2.0",
     },
     {
-      id: 3,
+      courseId: 3,
       courseName: "大学英语",
       deadline: "2026-03-10",
       isEvaluated: false,
@@ -75,7 +76,7 @@ async function getCourses(searchParams: {
       credits: "3.0",
     },
     {
-      id: 4,
+      courseId: 4,
       courseName: "体育篮球",
       deadline: "2026-03-02",
       isEvaluated: false,

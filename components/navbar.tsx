@@ -46,7 +46,7 @@ export default function Navbar() {
       <div className="justify-start items-center flex flex-row gap-6">
         <div>logo</div>
         <Link href="/">首页</Link>
-        <Link href="/myclass?unevaluated=true">评教</Link>
+        <Link href="/myclass?unevaluated=true">我的课程</Link>
         <Link href="/profile">个人中心</Link>
       </div>
       {showSearch ? <SearchInput /> : <div />}
