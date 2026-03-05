@@ -26,8 +26,8 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
             location={detail.location}
             time={detail.time}
           />
-          <CourseTabs announcements={detail.announcements} resources={detail.resources} />
-          <CourseReviewSection reviews={detail.reviews} />
+          <CourseTabs courseId={detail.courseId} announcements={detail.announcements} resources={detail.resources} />
+          <CourseReviewSection courseId={detail.courseId} initialReviews={detail.initialReviews} />
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">

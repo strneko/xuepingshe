@@ -1,6 +1,20 @@
-import { CourseDetailData } from "../_types";
+import {
+  CourseDetailData,
+  HistoryScoreItem,
+  HistoryScorePageResult,
+  ReviewItem,
+  ReviewPageResult,
+  ScoreHistoryGranularity,
+} from "../_types";
 
-const fakeCourseDetails: Record<string, CourseDetailData> = {
+const DEFAULT_REVIEW_PAGE_SIZE = 10;
+const DEFAULT_HISTORY_PAGE_SIZE = 12;
+
+interface FakeCourseDetailRecord extends Omit<CourseDetailData, "initialReviews"> {
+  reviews: ReviewItem[];
+}
+
+const fakeCourseDetails: Record<string, FakeCourseDetailRecord> = {
   "1": {
     courseId: "1",
     courseName: "高等数学",
@@ -194,11 +208,203 @@ const fakeCourseDetails: Record<string, CourseDetailData> = {
 export async function getCourseDetail(courseId: string): Promise<CourseDetailData> {
   await new Promise((resolve) => setTimeout(resolve, 120));
 
-  return (
-    fakeCourseDetails[courseId] ?? {
-      ...fakeCourseDetails["1"],
-      courseId,
-      courseName: `课程 ${courseId}`,
-    }
+  const detail = fakeCourseDetails[courseId] ?? {
+    ...fakeCourseDetails["1"],
+    courseId,
+    courseName: `课程 ${courseId}`,
+  };
+
+  return {
+    ...detail,
+    initialReviews: getReviewPageFromList(detail.reviews, null, DEFAULT_REVIEW_PAGE_SIZE),
+  };
+}
+
+function normalizeLimit(limit?: number) {
+  if (!limit || Number.isNaN(limit)) {
+    return DEFAULT_REVIEW_PAGE_SIZE;
+  }
+
+  return Math.min(20, Math.max(1, Math.floor(limit)));
+}
+
+function normalizeHistoryLimit(limit?: number) {
+  if (!limit || Number.isNaN(limit)) {
+    return DEFAULT_HISTORY_PAGE_SIZE;
+  }
+
+  return Math.min(30, Math.max(1, Math.floor(limit)));
+}
+
+function createCursor(review: ReviewItem) {
+  return `${review.createdAt}__${review.id}`;
+}
+
+function createHistoryCursor(item: HistoryScoreItem) {
+  return item.id;
+}
+
+function formatMonthLabel(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${date.getFullYear()}-${month}`;
+}
+
+function formatDayLabel(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function createTimeLabel(granularity: ScoreHistoryGranularity, index: number) {
+  if (granularity === "semester") {
+    const startYear = 2025 - Math.floor(index / 2);
+    const endYear = startYear + 1;
+    const semester = (index % 2) + 1;
+    return `${startYear}-${endYear}-${semester}`;
+  }
+
+  if (granularity === "year") {
+    return String(2026 - index);
+  }
+
+  if (granularity === "month") {
+    const date = new Date(2026, 2, 1);
+    date.setMonth(date.getMonth() - index);
+    return formatMonthLabel(date);
+  }
+
+  const date = new Date(2026, 2, 4);
+  date.setDate(date.getDate() - index);
+  return formatDayLabel(date);
+}
+
+function toNullableScore(value: number, seed: number, mod: number) {
+  if ((seed + mod) % 19 === 0) {
+    return null;
+  }
+
+  return Number(value.toFixed(1));
+}
+
+function createHistoryScoreRecord(
+  courseId: string,
+  granularity: ScoreHistoryGranularity,
+  index: number,
+): HistoryScoreItem {
+  const id = `${granularity}-${courseId}-${index + 1}`;
+  const seed = courseId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + index * 17;
+
+  const base = 3.8 + (seed % 11) / 10;
+  const attitude = toNullableScore(Math.min(5, base - 0.1 + ((seed + 1) % 4) / 10), seed, 1);
+  const content = toNullableScore(Math.min(5, base - 0.2 + ((seed + 2) % 5) / 10), seed, 2);
+  const method = toNullableScore(Math.min(5, base - 0.3 + ((seed + 3) % 6) / 10), seed, 3);
+  const effect = toNullableScore(Math.min(5, base - 0.4 + ((seed + 4) % 7) / 10), seed, 4);
+  const interaction = toNullableScore(Math.min(5, base - 0.2 + ((seed + 5) % 5) / 10), seed, 5);
+  const resource = toNullableScore(Math.min(5, base - 0.3 + ((seed + 6) % 6) / 10), seed, 6);
+  const improve = toNullableScore(Math.min(5, base - 0.1 + ((seed + 7) % 4) / 10), seed, 7);
+
+  const scoreValues = [attitude, content, method, effect, interaction, resource, improve].filter(
+    (item): item is number => item !== null,
   );
+  const overallScore =
+    scoreValues.length > 0
+      ? Number((scoreValues.reduce((sum, item) => sum + item, 0) / scoreValues.length).toFixed(1))
+      : null;
+
+  return {
+    id,
+    timeLabel: createTimeLabel(granularity, index),
+    overallScore,
+    attitude,
+    content,
+    method,
+    effect,
+    interaction,
+    resource,
+    improve,
+  };
+}
+
+function getHistorySourceCount(granularity: ScoreHistoryGranularity) {
+  if (granularity === "semester") {
+    return 24;
+  }
+
+  if (granularity === "year") {
+    return 12;
+  }
+
+  if (granularity === "month") {
+    return 36;
+  }
+
+  return 120;
+}
+
+function buildHistorySource(courseId: string, granularity: ScoreHistoryGranularity) {
+  const count = getHistorySourceCount(granularity);
+
+  return Array.from({ length: count }, (_, index) => createHistoryScoreRecord(courseId, granularity, index));
+}
+
+function getHistoryPageFromList(
+  historyList: HistoryScoreItem[],
+  cursor: string | null,
+  limit?: number,
+): HistoryScorePageResult {
+  const pageSize = normalizeHistoryLimit(limit);
+  const startIndex = cursor ? historyList.findIndex((item) => createHistoryCursor(item) === cursor) + 1 : 0;
+  const safeStartIndex = Math.max(0, startIndex);
+  const items = historyList.slice(safeStartIndex, safeStartIndex + pageSize);
+  const nextItem = historyList[safeStartIndex + pageSize];
+
+  return {
+    items,
+    nextCursor: nextItem ? createHistoryCursor(nextItem) : null,
+    hasMore: Boolean(nextItem),
+    total: historyList.length,
+  };
+}
+
+function getReviewPageFromList(reviews: ReviewItem[], cursor: string | null, limit?: number): ReviewPageResult {
+  const pageSize = normalizeLimit(limit);
+  const startIndex = cursor ? reviews.findIndex((item) => createCursor(item) === cursor) + 1 : 0;
+  const safeStartIndex = Math.max(0, startIndex);
+  const items = reviews.slice(safeStartIndex, safeStartIndex + pageSize);
+  const nextItem = reviews[safeStartIndex + pageSize];
+
+  return {
+    items,
+    nextCursor: nextItem ? createCursor(nextItem) : null,
+    hasMore: Boolean(nextItem),
+    total: reviews.length,
+  };
+}
+
+export async function getCourseReviewsPage(
+  courseId: string,
+  cursor: string | null,
+  limit?: number,
+): Promise<ReviewPageResult> {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+
+  const detail = fakeCourseDetails[courseId] ?? {
+    ...fakeCourseDetails["1"],
+    courseId,
+    courseName: `课程 ${courseId}`,
+  };
+
+  return getReviewPageFromList(detail.reviews, cursor, limit);
+}
+
+export async function getCourseScoreHistoryPage(
+  courseId: string,
+  granularity: ScoreHistoryGranularity,
+  cursor: string | null,
+  limit?: number,
+): Promise<HistoryScorePageResult> {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+
+  const source = buildHistorySource(courseId, granularity);
+  return getHistoryPageFromList(source, cursor, limit);
 }

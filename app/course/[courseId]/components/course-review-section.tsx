@@ -1,12 +1,19 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleSlash2, Info, ThumbsUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ReviewItem } from "../_types";
+import { ReviewItem, ReviewPageResult } from "../_types";
 
 interface CourseReviewSectionProps {
-  reviews: ReviewItem[];
+  courseId: string;
+  initialReviews: ReviewPageResult;
+  showSourceCourse?: boolean;
+  fetchBasePath?: string;
 }
 
 function getScoreTagClass(score: number | null) {
@@ -52,7 +59,98 @@ function ScoreWithWeight({ score, weight }: { score: number | null; weight?: num
   );
 }
 
-export default function CourseReviewSection({ reviews }: CourseReviewSectionProps) {
+export default function CourseReviewSection({
+  courseId,
+  initialReviews,
+  showSourceCourse = false,
+  fetchBasePath = "/api/courses",
+}: CourseReviewSectionProps) {
+  const [reviews, setReviews] = useState<ReviewItem[]>(initialReviews.items);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialReviews.nextCursor);
+  const [hasMore, setHasMore] = useState(initialReviews.hasMore);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const totalLoaded = reviews.length;
+  const totalCount = initialReviews.total;
+
+  const loadMore = useCallback(async () => {
+    if (isLoading || !hasMore || !nextCursor) {
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const params = new URLSearchParams({
+        cursor: nextCursor,
+        limit: "10",
+      });
+      const response = await fetch(`${fetchBasePath}/${courseId}/reviews?${params.toString()}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("加载失败");
+      }
+
+      const page: ReviewPageResult = await response.json();
+      setReviews((prev) => {
+        const existing = new Set(prev.map((item) => item.id));
+        const appended = page.items.filter((item) => !existing.has(item.id));
+        return [...prev, ...appended];
+      });
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+    } catch {
+      setLoadError("评论加载失败，请重试");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [courseId, fetchBasePath, hasMore, isLoading, nextCursor]);
+
+  useEffect(() => {
+    const target = sentinelRef.current;
+    if (!target || !hasMore) {
+      return;
+    }
+
+    observerRef.current?.disconnect();
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "500px 0px",
+        threshold: 0,
+      },
+    );
+
+    observerRef.current.observe(target);
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [hasMore, loadMore]);
+
+  const footerText = useMemo(() => {
+    if (hasMore) {
+      return null;
+    }
+
+    if (totalLoaded >= totalCount) {
+      return "已加载全部评论";
+    }
+
+    return "暂无更多评论";
+  }, [hasMore, totalCount, totalLoaded]);
+
   return (
     <Card id="course-reviews">
       <CardHeader>
@@ -70,6 +168,9 @@ export default function CourseReviewSection({ reviews }: CourseReviewSectionProp
                 <div>
                   <p className="text-sm font-medium">{review.nickname}</p>
                   <p className="text-xs text-muted-foreground">{review.createdAt}</p>
+                  {showSourceCourse && review.sourceCourseName && (
+                    <p className="text-xs text-muted-foreground">来源课程：{review.sourceCourseName}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -176,6 +277,21 @@ export default function CourseReviewSection({ reviews }: CourseReviewSectionProp
             {index < reviews.length - 1 && <Separator className="mt-3" />}
           </div>
         ))}
+
+        {isLoading && <p className="text-center text-xs text-muted-foreground">正在加载更多评论...</p>}
+
+        {loadError && (
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-xs text-destructive">{loadError}</p>
+            <Button size="sm" variant="outline" onClick={() => void loadMore()}>
+              重试
+            </Button>
+          </div>
+        )}
+
+        {!isLoading && footerText && <p className="text-center text-xs text-muted-foreground">{footerText}</p>}
+
+        <div ref={sentinelRef} className="h-1" aria-hidden="true" />
       </CardContent>
     </Card>
   );

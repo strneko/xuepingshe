@@ -6,6 +6,7 @@ import { ReviewItem } from "../_types";
 
 interface TopReviewsCardProps {
   reviews: ReviewItem[];
+  showSourceCourse?: boolean;
 }
 
 function getScoreTagClass(score: number | null) {
@@ -37,7 +38,7 @@ function ScoreChip({ score }: { score: number | null }) {
   );
 }
 
-export default function TopReviewsCard({ reviews }: TopReviewsCardProps) {
+export default function TopReviewsCard({ reviews, showSourceCourse = false }: TopReviewsCardProps) {
   return (
     <Card id="course-reviews">
       <CardHeader>
@@ -55,6 +56,9 @@ export default function TopReviewsCard({ reviews }: TopReviewsCardProps) {
                 <div>
                   <p className="text-sm font-medium">{review.nickname}</p>
                   <p className="text-xs text-muted-foreground">{review.createdAt}</p>
+                  {showSourceCourse && review.sourceCourseName && (
+                    <p className="text-xs text-muted-foreground">来源课程：{review.sourceCourseName}</p>
+                  )}
                 </div>
               </div>
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">

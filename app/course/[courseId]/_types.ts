@@ -30,11 +30,42 @@ export interface ReviewItem {
   id: string;
   nickname: string;
   avatarUrl?: string;
+  sourceCourseId?: string;
+  sourceCourseName?: string;
   createdAt: string;
   overallScore: number | null;
   likesCount: number;
   summary: string;
   detailedScores?: ReviewScoreItem[];
+}
+
+export interface ReviewPageResult {
+  items: ReviewItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
+}
+
+export type ScoreHistoryGranularity = "semester" | "year" | "month" | "day";
+
+export interface HistoryScoreItem {
+  id: string;
+  timeLabel: string;
+  overallScore: number | null;
+  attitude: number | null;
+  content: number | null;
+  method: number | null;
+  effect: number | null;
+  interaction: number | null;
+  resource: number | null;
+  improve: number | null;
+}
+
+export interface HistoryScorePageResult {
+  items: HistoryScoreItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
 }
 
 export interface CourseDetailData {
@@ -48,6 +79,6 @@ export interface CourseDetailData {
   recentSevenScores: DimensionScore[];
   announcements: Announcement[];
   resources: ResourceItem[];
-  reviews: ReviewItem[];
+  initialReviews: ReviewPageResult;
   topReviews: ReviewItem[];
 }
