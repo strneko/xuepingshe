@@ -353,3 +353,14 @@ export async function getTeacherScoreHistoryPage(
   const source = buildHistorySource(teacherId, granularity);
   return getHistoryPageFromList(source, cursor, limit);
 }
+
+export async function getTeacherTopReviews(teacherId: string): Promise<ReviewItem[]> {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+
+  const detail = getTeacherSource(teacherId);
+  return detail.topReviews.map((item) => ({
+    ...item,
+    sourceTeacherId: item.sourceTeacherId ?? detail.teacherId,
+    sourceTeacherName: item.sourceTeacherName ?? detail.teacherName,
+  }));
+}

@@ -2,7 +2,7 @@ import CourseHero from "./components/course-hero";
 import CourseTabs from "./components/course-tabs";
 import CourseReviewSection from "./components/course-review-section";
 import ScoreOverviewCard from "./components/score-overview-card";
-import TopReviewsCard from "./components/top-reviews-card";
+import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
 import { getCourseDetail } from "./_data/get-course-detail";
 
 interface CourseDetailPageProps {
@@ -32,7 +32,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <ScoreOverviewCard overallScore={detail.recentOverallScore} dimensions={detail.recentSevenScores} />
-          <TopReviewsCard reviews={detail.topReviews} />
+          <TopReviewsCarouselPanel fetchUrl={`/api/courses/${detail.courseId}/top-reviews`} />
         </aside>
       </div>
     </main>

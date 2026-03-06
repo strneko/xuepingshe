@@ -46,7 +46,7 @@ export default function Filter() {
       <div className="relative w-[20vw]">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
-          placeholder="搜索课程名称"
+          placeholder="搜索课程名称或教师"
           className="pl-9"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}

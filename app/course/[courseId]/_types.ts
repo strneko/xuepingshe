@@ -32,6 +32,8 @@ export interface ReviewItem {
   avatarUrl?: string;
   sourceCourseId?: string;
   sourceCourseName?: string;
+  sourceTeacherId?: string;
+  sourceTeacherName?: string;
   createdAt: string;
   overallScore: number | null;
   likesCount: number;

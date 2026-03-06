@@ -1,6 +1,6 @@
 import CourseReviewSection from "../../course/[courseId]/components/course-review-section";
 import ScoreOverviewCard from "../../course/[courseId]/components/score-overview-card";
-import TopReviewsCard from "../../course/[courseId]/components/top-reviews-card";
+import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
 import { getTeacherDetail } from "./_data/get-teacher-detail";
 import TeacherHero from "./components/teacher-hero";
 import TeacherHistoryCourses from "./components/teacher-history-courses";
@@ -41,7 +41,11 @@ export default async function TeacherDetailPage({ params }: TeacherDetailPagePro
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <ScoreOverviewCard overallScore={detail.recentOverallScore} dimensions={detail.recentSevenScores} />
-          <TopReviewsCard reviews={detail.topReviews} showSourceCourse />
+          <TopReviewsCarouselPanel
+            fetchUrl={`/api/teachers/${detail.teacherId}/top-reviews`}
+            showSourceCourse
+            showSourceTeacher
+          />
         </aside>
       </div>
     </main>

@@ -87,6 +87,30 @@ async function getCourses(searchParams: {
       description: "篮球",
       credits: "1.0",
     },
+    {
+      courseId: 5,
+      courseName: "高等数学",
+      deadline: "2026-03-15",
+      isEvaluated: false,
+      teacher: "王教授",
+      location: "A-101",
+      time: "周一 08:00",
+      imageUrl: "#",
+      description: "微积分",
+      credits: "4.0",
+    },
+    {
+      courseId: 6,
+      courseName: "高等数学",
+      deadline: "2026-03-15",
+      isEvaluated: false,
+      teacher: "姬教授",
+      location: "A-101",
+      time: "周一 08:00",
+      imageUrl: "#",
+      description: "微积分",
+      credits: "4.0",
+    },
   ];
 
   let result = [...allCourses];
@@ -98,7 +122,10 @@ async function getCourses(searchParams: {
 
   if (searchParams.keyword?.trim()) {
     const normalizedKeyword = searchParams.keyword.trim().toLowerCase();
-    result = result.filter((c) => c.courseName.toLowerCase().includes(normalizedKeyword));
+    result = result.filter(
+      (c) =>
+        c.courseName.toLowerCase().includes(normalizedKeyword) || c.teacher.toLowerCase().includes(normalizedKeyword),
+    );
   }
 
   // 服务端排序
@@ -109,7 +136,7 @@ async function getCourses(searchParams: {
     return (dateA - dateB) * sortOrder;
   });
 
-  const pageSize = 2; //Consider making this a configurable constant or parameter to improve maintainability and allow easier adjustments.
+  const pageSize = 3; //Consider making this a configurable constant or parameter to improve maintainability and allow easier adjustments.
 
   const total = result.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -128,6 +155,7 @@ async function getCourses(searchParams: {
 export default async function MyClassPage({ searchParams }: MyClassPageProps) {
   const params = await searchParams;
   const { courses, currentPage, totalPages } = await getCourses(params);
+  const keyword = params.keyword?.trim() ?? "";
   return (
     <div>
       <Filter />
@@ -138,7 +166,7 @@ export default async function MyClassPage({ searchParams }: MyClassPageProps) {
           </div>
         }
       >
-        <CoursesList courses={courses} />
+        <CoursesList courses={courses} keyword={keyword} />
       </Suspense>
       <Pagination currentPage={currentPage} totalPages={totalPages} />
     </div>

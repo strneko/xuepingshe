@@ -408,3 +408,20 @@ export async function getCourseScoreHistoryPage(
   const source = buildHistorySource(courseId, granularity);
   return getHistoryPageFromList(source, cursor, limit);
 }
+
+export async function getCourseTopReviews(courseId: string): Promise<ReviewItem[]> {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+
+  const detail = fakeCourseDetails[courseId] ?? {
+    ...fakeCourseDetails["1"],
+    courseId,
+    courseName: `课程 ${courseId}`,
+  };
+
+  return detail.topReviews.map((item) => ({
+    ...item,
+    sourceCourseId: item.sourceCourseId ?? detail.courseId,
+    sourceCourseName: item.sourceCourseName ?? detail.courseName,
+    sourceTeacherName: item.sourceTeacherName ?? detail.teacher,
+  }));
+}

@@ -1,31 +1,45 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { useRouter, usePathname } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+
+type CategoryValue = "0" | "1" | "2";
+
+const CATEGORY_OPTIONS: { value: CategoryValue; label: string }[] = [
+  { value: "0", label: "全部" },
+  { value: "1", label: "课程" },
+  { value: "2", label: "教师" },
+];
 
 export default function CategoriesBar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const keyword = searchParams.get("keyword") || "";
-  const category = parseInt(searchParams.get("category") || "0");
-  const handleCategoryChange = (category: number) => {
+
+  const rawCategory = searchParams.get("category");
+  const category: CategoryValue = rawCategory === "1" || rawCategory === "2" ? rawCategory : "0";
+
+  const handleCategoryChange = (nextCategory: CategoryValue) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("category", category.toString());
-    router.push(pathname + `?${params.toString()}`);
+    params.set("category", nextCategory);
+    params.delete("page");
+    router.replace(`${pathname}?${params.toString()}`);
   };
+
   return (
-    <div className="flex gap-4">
-      <Button variant={category === 0 ? "default" : "outline"} onClick={() => handleCategoryChange(0)}>
-        全部
-      </Button>
-      <Button variant={category === 1 ? "default" : "outline"} onClick={() => handleCategoryChange(1)}>
-        课程
-      </Button>
-      <Button variant={category === 2 ? "default" : "outline"} onClick={() => handleCategoryChange(2)}>
-        教师
-      </Button>
-      {/* //TODO:筛选 */}
+    <div className="flex items-center justify-start px-1">
+      <ButtonGroup>
+        {CATEGORY_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            variant={category === option.value ? "default" : "outline"}
+            onClick={() => handleCategoryChange(option.value)}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </ButtonGroup>
     </div>
   );
 }
