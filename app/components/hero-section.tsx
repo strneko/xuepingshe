@@ -17,7 +17,7 @@ export default function HeroSection() {
   });
 
   return (
-    <section id="hero-search" className="flex flex-col items-center h-[60vh] justify-center bg-gray-100">
+    <section id="hero-search" className="flex flex-col items-center h-[40vh] justify-center bg-gray-100">
       <h1 className="text-4xl font-bold mb-4">欢迎来到学评社</h1>
       <p className="text-lg text-gray-600 mb-8">发现好老师，分享真评价</p>
       <div id="hero-search">

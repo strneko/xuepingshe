@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Recommendations from "./components/recommendations";
 import HeroSection from "./components/hero-section";
 

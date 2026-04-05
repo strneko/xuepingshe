@@ -61,23 +61,22 @@ export default function Recommendations() {
   }, []);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] gap-20 justify-between ">
-      <div className="flex-1">
-        {isReviewLoading ? (
-          <div className="rounded-md border p-4 text-sm text-muted-foreground">热门评价加载中...</div>
-        ) : (
-          <ReviewCarousel
-            reviews={reviews}
-            variant="detailed"
-            showSourceCourse
-            showSourceTeacher
-            className="h-[calc(100vh-200px)] mt-14.5 p-5"
-            contentClassName="h-[calc(100vh-200px)]"
-            itemClassName="basis-full"
-          />
-        )}
-      </div>
-      <RecommendedList className="flex-2" items={items} onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+    <div className="flex h-[calc(40vh-64px)] gap-20 justify-between ">
+      {isReviewLoading ? (
+        <div className="rounded-md border p-4 text-sm text-muted-foreground">热门评价加载中...</div>
+      ) : (
+        <ReviewCarousel
+          reviews={reviews}
+          variant="detailed"
+          showSourceCourse
+          showSourceTeacher
+          className="mt-4 h-[calc(50vh-64px)] px-10 py-5"
+          contentClassName="h-[calc(50vh-64px)]"
+          itemClassName="basis-full md:basis-1/2 xl:basis-1/3"
+          previousButtonClassName="left-2 top-1/2 -translate-y-1/2"
+          nextButtonClassName="right-2 top-1/2 -translate-y-1/2"
+        />
+      )}
     </div>
   );
 }

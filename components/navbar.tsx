@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Store } from "lucide-react";
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import NotificationBell from "./notification-bell";
 import UserHover from "./user-hover";
@@ -15,33 +14,8 @@ const SearchInput = dynamic(() => import("./search-input"), {
 });
 
 export default function Navbar() {
-  const [showSearch, setShowSearch] = useState(false);
   const pathname = usePathname();
-  useEffect(() => {
-    if (pathname !== "/") {
-      if (pathname === "/myclass") {
-        setShowSearch(false);
-      } else {
-        setShowSearch(true);
-      }
-      return;
-    }
-    const target = document.getElementById("hero-search");
-    if (!target) {
-      setShowSearch(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowSearch(!entry.isIntersecting);
-      },
-      { root: null, threshold: 0.6, rootMargin: "64px 0px 0px 0px" },
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [pathname]);
+  const showSearch = pathname !== "/" && pathname !== "/myclass";
 
   return (
     <nav className="sticky top-0 z-50 flex w-full h-16 px-[10vw] border-b shadow-sm items-center justify-between bg-background">

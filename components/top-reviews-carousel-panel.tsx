@@ -75,8 +75,8 @@ export default function TopReviewsCarouselPanel({
         className="w-full h-64"
         contentClassName="h-64"
         itemClassName="basis-full h-full"
-        previousButtonClassName="-top-5"
-        nextButtonClassName="-bottom-5"
+        previousButtonClassName="-left-6 top-1/2 -translate-y-1/2"
+        nextButtonClassName="-right-6 top-1/2 -translate-y-1/2"
       />
     );
   }, [error, isLoading, reviews, showSourceCourse, showSourceTeacher]);
