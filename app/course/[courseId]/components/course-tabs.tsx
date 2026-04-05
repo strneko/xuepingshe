@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import Pagination from "@/components/pagination";
 import HistoryScoreList from "./history-score-list";
 import { Announcement, ResourceItem } from "../_types";
+import CourseResourceUpload from "./course-resource-upload";
 
 interface CourseTabsProps {
   courseId: string;
@@ -20,6 +21,11 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [resourceItems, setResourceItems] = useState<ResourceItem[]>(resources);
+
+  useEffect(() => {
+    setResourceItems(resources);
+  }, [resources]);
 
   const rawTab = searchParams.get("tab");
   const activeTab: "announcement" | "resource" | "history" =
@@ -30,7 +36,7 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
 
   const pageSize = 3;
   const totalAnnouncementPages = Math.max(1, Math.ceil(announcements.length / pageSize));
-  const totalResourcePages = Math.max(1, Math.ceil(resources.length / pageSize));
+  const totalResourcePages = Math.max(1, Math.ceil(resourceItems.length / pageSize));
   const totalPages =
     activeTab === "announcement" ? totalAnnouncementPages : activeTab === "resource" ? totalResourcePages : 1;
   const currentPage = Math.min(requestedPage, totalPages);
@@ -54,8 +60,8 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
     [announcements, currentPage],
   );
   const pagedResources = useMemo(
-    () => resources.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [resources, currentPage],
+    () => resourceItems.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [resourceItems, currentPage],
   );
 
   const switchTab = (tab: "announcement" | "resource" | "history") => {
@@ -112,6 +118,12 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
               </section>
             ) : activeTab === "resource" ? (
               <section id="course-resources" className="space-y-3">
+                <CourseResourceUpload
+                  courseId={courseId}
+                  onUploaded={(item) => {
+                    setResourceItems((current) => [item, ...current]);
+                  }}
+                />
                 {pagedResources.map((item, index) => (
                   <div key={item.id} className="space-y-2">
                     <div className="flex items-start justify-between gap-4">
