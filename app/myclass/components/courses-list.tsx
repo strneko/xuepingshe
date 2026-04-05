@@ -1,5 +1,6 @@
 import { CourseCardProps } from "../page";
 import { CourseCard } from "./course-item";
+import { Separator } from "@/components/ui/separator";
 interface CourseListProps {
   courses: CourseCardProps[];
   keyword?: string;
@@ -16,23 +17,27 @@ export default function CoursesList({ courses: classes, keyword = "" }: CourseLi
   }
 
   return (
-    <div className="flex flex-col items-center space-y-6 py-8 px-[10vw]">
-      {classes.map((course) => (
-        <CourseCard
-          key={course.courseId}
-          courseId={course.courseId}
-          courseName={course.courseName}
-          teacher={course.teacher}
-          location={course.location}
-          time={course.time}
-          imageUrl={course.imageUrl}
-          deadline={course.deadline}
-          isEvaluated={course.isEvaluated}
-          description={course.description}
-          credits={course.credits}
-          keyword={keyword}
-        />
-      ))}
+    <div className="py-8 px-[10vw]">
+      <div className="overflow-hidden rounded-xl border bg-card">
+        {classes.map((course, index) => (
+          <div key={course.courseId}>
+            <CourseCard
+              courseId={course.courseId}
+              courseName={course.courseName}
+              teacher={course.teacher}
+              location={course.location}
+              time={course.time}
+              imageUrl={course.imageUrl}
+              deadline={course.deadline}
+              isEvaluated={course.isEvaluated}
+              description={course.description}
+              credits={course.credits}
+              keyword={keyword}
+            />
+            {index < classes.length - 1 ? <Separator /> : null}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

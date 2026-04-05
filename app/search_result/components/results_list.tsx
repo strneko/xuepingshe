@@ -3,6 +3,7 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import SearchResultCard from "@/components/search-result-card";
 
 type ResultType = "course" | "teacher";
@@ -191,20 +192,23 @@ export default function ResultsList() {
         </div>
       )}
 
-      <div className="grid gap-3">
-        {items.map((item) => (
-          <SearchResultCard
-            key={item.id}
-            href={item.href}
-            type={item.type}
-            title={item.title}
-            subtitle={item.subtitle}
-            department={item.department}
-            score={item.score}
-            reviewCount={item.reviewCount}
-            snippet={item.snippet}
-            keyword={normalizedKeyword}
-          />
+      <div className="overflow-hidden rounded-xl border bg-card">
+        {items.map((item, index) => (
+          <div key={item.id}>
+            <SearchResultCard
+              href={item.href}
+              type={item.type}
+              title={item.title}
+              subtitle={item.subtitle}
+              department={item.department}
+              score={item.score}
+              reviewCount={item.reviewCount}
+              snippet={item.snippet}
+              keyword={normalizedKeyword}
+              borderless
+            />
+            {index < items.length - 1 ? <Separator /> : null}
+          </div>
         ))}
       </div>
 

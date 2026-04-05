@@ -36,6 +36,7 @@ export default function UserInfoCard({ user }: UserInfoCardProps) {
           <p className="text-xs text-muted-foreground">评价数：{user?.reviewCount ?? 0}</p>
           <p className="text-xs text-muted-foreground">被点赞数：{user?.likedCount ?? 0}</p>
         </div>
+        <p className="text-xs text-muted-foreground">积分: {user?.points ?? 0}</p>
         <Button type="button" variant="outline" className="w-full" onClick={handleProfileClick}>
           账户资料
         </Button>

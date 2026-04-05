@@ -6,6 +6,7 @@ export interface UserProfile {
   avatarUrl?: string;
   reviewCount: number;
   likedCount: number;
+  points: number;
 }
 
 interface AuthState {

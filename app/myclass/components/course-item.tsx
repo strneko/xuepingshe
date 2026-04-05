@@ -45,6 +45,7 @@ export function CourseCard({
         department={`${location} · ${time}`}
         snippet={description}
         keyword={keyword}
+        borderless
         actionSlot={
           <div className="flex w-32 flex-col items-center gap-2">
             {isEvaluated ? (

@@ -17,6 +17,7 @@ interface SearchResultCardProps {
   snippet?: string;
   keyword?: string;
   actionSlot?: React.ReactNode;
+  borderless?: boolean;
 }
 
 function highlightText(text: string, keyword: string) {
@@ -50,9 +51,12 @@ export default function SearchResultCard({
   snippet,
   keyword = "",
   actionSlot,
+  borderless = false,
 }: SearchResultCardProps) {
   return (
-    <Card className="transition-colors hover:bg-muted/30 w-full">
+    <Card
+      className={`w-full transition-colors hover:bg-muted/30 ${borderless ? "border-0 rounded-none shadow-none" : ""}`}
+    >
       <div className="flex items-start justify-between gap-3 p-6">
         <Link href={href} className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1">

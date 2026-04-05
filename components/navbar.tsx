@@ -3,8 +3,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { Store } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import NotificationBell from "./notification-bell";
 import UserHover from "./user-hover";
 
 const SearchInput = dynamic(() => import("./search-input"), {
@@ -46,11 +48,23 @@ export default function Navbar() {
       <div className="justify-start items-center flex flex-row gap-6">
         <div>logo</div>
         <Link href="/">首页</Link>
+        <Link href="/community">社区</Link>
         <Link href="/myclass?unevaluated=true">我的课程</Link>
         <Link href="/profile">个人中心</Link>
       </div>
       {showSearch ? <SearchInput /> : <div />}
-      <UserHover />
+
+      <div className="flex items-center gap-3">
+        <Link
+          href="/shop"
+          aria-label="商店"
+          className="inline-flex size-9 items-center justify-center rounded-full transition-colors hover:bg-accent"
+        >
+          <Store className="size-5" />
+        </Link>
+        <NotificationBell />
+        <UserHover />
+      </div>
     </nav>
   );
 }

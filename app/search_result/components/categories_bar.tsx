@@ -28,7 +28,7 @@ export default function CategoriesBar() {
   };
 
   return (
-    <div className="flex items-center justify-start px-1">
+    <div className="flex items-center justify-start px-1 py-3">
       <ButtonGroup>
         {CATEGORY_OPTIONS.map((option) => (
           <Button
