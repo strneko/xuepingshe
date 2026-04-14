@@ -23,7 +23,9 @@ model User {
   courseReviews      CourseReview[]
   courseReviewLikes  CourseReviewLike[]
   teacherReviews     TeacherReview[]
-  teacherReviewLikes  TeacherReviewLike[]
+  teacherReviewLikes TeacherReviewLike[]
+  uploadSessions     ResourceUploadSession[]
+  uploadedResources  CourseResource[]
 }
 
 model Post {

@@ -21,3 +21,5 @@ export async function getTeacherDetail(teacherId: string): Promise<TeacherDetail
     initialHistoryScores,
   };
 }
+
+export { getTeacherReviewsPage, getTeacherTopReviews, getTeacherScoreHistoryPage };

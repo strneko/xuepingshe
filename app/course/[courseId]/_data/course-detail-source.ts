@@ -54,14 +54,7 @@ const fakeCourseDetails: Record<string, CourseDetailRecord> = {
         publishAt: "2026-02-18",
       },
     ],
-    resources: [
-      { id: "r1", name: "第五章讲义.pdf", type: "讲义", updatedAt: "2026-03-01" },
-      { id: "r2", name: "习题课录播.mp4", type: "视频", updatedAt: "2026-02-28" },
-      { id: "r3", name: "章节练习题.docx", type: "作业", updatedAt: "2026-02-26" },
-      { id: "r4", name: "典型错题解析.pdf", type: "资料", updatedAt: "2026-02-22" },
-      { id: "r5", name: "历年真题精选.pdf", type: "题库", updatedAt: "2026-02-18" },
-      { id: "r6", name: "课堂板书照片.zip", type: "附件", updatedAt: "2026-02-15" },
-    ],
+    resources: [],
     reviews: [
       {
         id: "rv1",

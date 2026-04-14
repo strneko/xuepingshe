@@ -1,0 +1,112 @@
+enum UploadStatus {
+  INIT
+  UPLOADING
+  MERGING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum UploadPartStatus {
+  PENDING
+  UPLOADED
+  FAILED
+}
+
+enum ResourceStorageType {
+  LOCAL_DISK
+  S3
+  OSS
+  COS
+  MINIO
+}
+
+enum ResourceStatus {
+  ACTIVE
+  DELETED
+}
+
+model ResourceUploadSession {
+  id               String              @id @default(cuid())
+  uploadId         String              @unique
+  courseId         String
+  userId           String
+  fileName         String
+  mimeType         String
+  fileSize         Int
+  chunkSize        Int
+  totalChunks      Int
+  wholeFileHash    String
+  status           UploadStatus        @default(INIT)
+  uploadedChunks   Int                 @default(0)
+  storageType      ResourceStorageType @default(LOCAL_DISK)
+  storageBucket    String?
+  tempObjectPrefix String
+  resourceId       String?
+  expiresAt        DateTime
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource CourseResource?      @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  parts    ResourceUploadPart[]
+
+  @@index([courseId, status])
+  @@index([userId, createdAt])
+  @@index([wholeFileHash, fileSize])
+}
+
+model ResourceUploadPart {
+  id         String           @id @default(cuid())
+  uploadId   String
+  partNumber Int
+  chunkHash  String
+  chunkSize  Int
+  storageKey String
+  etag       String?
+  status     UploadPartStatus @default(UPLOADED)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  session ResourceUploadSession @relation(fields: [uploadId], references: [uploadId], onDelete: Cascade)
+
+  @@unique([uploadId, partNumber])
+  @@index([uploadId, status])
+}
+
+model CourseResource {
+  id            String              @id @default(cuid())
+  courseId      String
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  storageType   ResourceStorageType @default(LOCAL_DISK)
+  storageBucket String?
+  storageKey    String
+  wholeFileHash String
+  status        ResourceStatus      @default(ACTIVE)
+  uploadedBy    String
+  uploadedAt    DateTime            @default(now())
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  uploader User                    @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  uploadSessions ResourceUploadSession[]
+  dedupeEntries  ResourceDedupeIndex[]
+
+  @@index([courseId, createdAt])
+  @@index([wholeFileHash, fileSize])
+}
+
+model ResourceDedupeIndex {
+  id        String   @id @default(cuid())
+  hashType  String
+  hashValue String
+  fileSize  Int
+  resourceId String
+  createdAt DateTime @default(now())
+
+  resource CourseResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([hashType, hashValue, fileSize])
+}

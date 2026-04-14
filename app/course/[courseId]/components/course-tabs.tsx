@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -68,6 +69,10 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
     updateQuery(tab, 1);
   };
 
+  const openResourceDownload = (resourceId: string) => {
+    window.open(`/api/resources/${resourceId}/download`, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-start">
@@ -126,13 +131,24 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
                 />
                 {pagedResources.map((item, index) => (
                   <div key={item.id} className="space-y-2">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="break-all text-sm font-medium leading-6">{item.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => openResourceDownload(item.id)}
+                      className="group flex w-full items-start justify-between gap-4 rounded-lg border border-transparent px-3 py-2 text-left transition-all duration-200 hover:border-border hover:bg-muted/60 hover:shadow-sm focus-visible:border-border focus-visible:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    >
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="break-all text-sm font-medium leading-6 transition-colors group-hover:text-primary">
+                            {item.name}
+                          </p>
+                          <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
+                        </div>
                         <p className="text-xs text-muted-foreground">{item.type}</p>
                       </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">{item.updatedAt}</span>
-                    </div>
+                      <span className="shrink-0 text-xs text-muted-foreground transition-colors group-hover:text-foreground">
+                        {item.updatedAt}
+                      </span>
+                    </button>
                     {index < pagedResources.length - 1 && <Separator className="mt-3" />}
                   </div>
                 ))}
