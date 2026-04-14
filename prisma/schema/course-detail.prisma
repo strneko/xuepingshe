@@ -1,0 +1,68 @@
+enum CourseScoreGranularity {
+  SEMESTER
+  YEAR
+  MONTH
+  DAY
+}
+
+enum CourseReviewStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+  PENDING
+}
+
+model CourseReview {
+  id               String   @id @default(cuid())
+  courseId         String
+  userId           String
+  nickname         String
+  avatarUrl        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  overallScore     Float?
+  likesCount       Int      @default(0)
+  summary          String
+  detailedScoresJson Json?
+  status           CourseReviewStatus @default(VISIBLE)
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes            CourseReviewLike[]
+
+  @@index([courseId, createdAt])
+  @@index([courseId, likesCount])
+  @@index([userId, createdAt])
+}
+
+model CourseReviewLike {
+  id         String   @id @default(cuid())
+  reviewId   String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  review     CourseReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId, createdAt])
+}
+
+model CourseScoreHistory {
+  id          String                @id @default(cuid())
+  courseId    String
+  granularity CourseScoreGranularity
+  cursorKey   String
+  timeLabel   String
+  sortOrder   Int
+  overallScore Float?
+  attitude    Float?
+  content     Float?
+  method      Float?
+  effect      Float?
+  interaction Float?
+  resource    Float?
+  improve     Float?
+
+  @@unique([courseId, granularity, cursorKey])
+  @@index([courseId, granularity, sortOrder])
+}

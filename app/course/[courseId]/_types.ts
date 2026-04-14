@@ -37,6 +37,7 @@ export interface ReviewItem {
   createdAt: string;
   overallScore: number | null;
   likesCount: number;
+  liked?: boolean;
   summary: string;
   detailedScores?: ReviewScoreItem[];
 }

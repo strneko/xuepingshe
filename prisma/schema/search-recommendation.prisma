@@ -1,0 +1,58 @@
+enum SearchDocumentType {
+  COURSE
+  TEACHER
+}
+
+model SearchDocument {
+  id                  String             @id @default(cuid())
+  docType             SearchDocumentType
+  docId               String
+  title               String
+  subtitle            String
+  department          String
+  scoreSnapshot       Float
+  reviewCountSnapshot Int
+  snippet             String
+  searchableText      String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@unique([docType, docId])
+  @@index([docType])
+  @@index([title])
+  @@index([department])
+}
+
+model SearchKeyword {
+  id             String   @id @default(cuid())
+  keyword        String   @unique
+  searchCount    Int      @default(0)
+  lastSearchedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([searchCount])
+}
+
+model RecommendedReview {
+  id                String   @id @default(cuid())
+  reviewId          String   @unique
+  nickname          String
+  sourceCourseId    String?
+  sourceCourseName  String?
+  sourceTeacherId   String?
+  sourceTeacherName String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  overallScore      Float?
+  likesCount        Int      @default(0)
+  summary           String
+  detailedScoresJson Json?
+  rankScore         Float    @default(0)
+  isActive          Boolean  @default(true)
+  batchKey          String?
+
+  @@index([isActive, rankScore])
+  @@index([batchKey])
+  @@index([createdAt])
+}

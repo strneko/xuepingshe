@@ -1,0 +1,78 @@
+enum TeacherReviewStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+  PENDING
+}
+
+model TeacherProfile {
+  teacherId          String   @id
+  teacherName        String
+  avatarUrl          String?
+  department         String
+  title              String
+  researchAreas      String[]
+  office             String
+  description        String
+  recentOverallScore  Float
+  recentSevenScoresJson Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model TeacherReview {
+  id                 String   @id @default(cuid())
+  teacherId          String
+  userId             String
+  nickname           String
+  avatarUrl          String?
+  sourceCourseId     String?
+  sourceCourseName   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  overallScore       Float?
+  likesCount         Int      @default(0)
+  summary            String
+  detailedScoresJson  Json?
+  status             TeacherReviewStatus @default(VISIBLE)
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes              TeacherReviewLike[]
+
+  @@index([teacherId, createdAt])
+  @@index([teacherId, likesCount])
+  @@index([userId, createdAt])
+}
+
+model TeacherReviewLike {
+  id         String   @id @default(cuid())
+  reviewId   String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  review     TeacherReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId, createdAt])
+}
+
+model TeacherScoreHistory {
+  id           String                @id @default(cuid())
+  teacherId    String
+  granularity  CourseScoreGranularity
+  cursorKey    String
+  timeLabel    String
+  sortOrder    Int
+  overallScore Float?
+  attitude     Float?
+  content      Float?
+  method       Float?
+  effect       Float?
+  interaction   Float?
+  resource     Float?
+  improve      Float?
+
+  @@unique([teacherId, granularity, cursorKey])
+  @@index([teacherId, granularity, sortOrder])
+}

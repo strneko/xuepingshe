@@ -1,4 +1,5 @@
 import CourseHero from "./components/course-hero";
+import CourseReviewCompose from "./components/course-review-compose";
 import CourseTabs from "./components/course-tabs";
 import CourseReviewSection from "./components/course-review-section";
 import ScoreOverviewCard from "./components/score-overview-card";
@@ -27,6 +28,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
             time={detail.time}
           />
           <CourseTabs courseId={detail.courseId} announcements={detail.announcements} resources={detail.resources} />
+          <CourseReviewCompose courseId={detail.courseId} courseName={detail.courseName} teacher={detail.teacher} />
           <CourseReviewSection courseId={detail.courseId} initialReviews={detail.initialReviews} />
         </section>
 

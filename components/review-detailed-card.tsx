@@ -1,5 +1,6 @@
 import { CircleSlash2, Info, ThumbsUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ReviewItem } from "@/app/course/[courseId]/_types";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,9 @@ interface ReviewDetailedCardProps {
   showSourceTeacher?: boolean;
   fallbackCourseName?: string;
   fallbackTeacherName?: string;
+  liked?: boolean;
+  disabled?: boolean;
+  onLike?: (review: ReviewItem) => void;
   className?: string;
 }
 
@@ -62,10 +66,21 @@ export default function ReviewDetailedCard({
   showSourceTeacher = false,
   fallbackCourseName,
   fallbackTeacherName,
+  liked = false,
+  disabled = false,
+  onLike,
   className,
 }: ReviewDetailedCardProps) {
   const sourceCourse = review.sourceCourseName ?? fallbackCourseName;
   const sourceTeacher = review.sourceTeacherName ?? fallbackTeacherName;
+  const detailedScores = (review.detailedScores ?? [])
+    .filter((item) => item.score !== null)
+    .map((item) => ({
+      ...item,
+      subItems: item.subItems?.filter((subItem) => subItem.score !== null),
+    }));
+  const hasSummary = review.summary.trim().length > 0;
+  const hasDetailedScores = detailedScores.length > 0;
 
   return (
     <div className={cn("@container space-y-2", className)}>
@@ -89,28 +104,39 @@ export default function ReviewDetailedCard({
             综合评分
             <ScoreChip score={review.overallScore} />
           </span>
-          <span className="inline-flex items-center gap-1">
-            <ThumbsUp className="size-3.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            className={cn(
+              "h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground",
+              liked && "bg-accent text-foreground hover:bg-accent",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
+            onClick={() => onLike?.(review)}
+          >
+            <ThumbsUp className={cn("size-3.5", liked && "fill-current")} />
             {review.likesCount}
-          </span>
+          </Button>
         </div>
       </div>
 
       <div
         className={
-          review.detailedScores && review.detailedScores.length > 0
-            ? "grid gap-3 @[600px]:grid-cols-[minmax(0,1fr)_400px]"
-            : "grid gap-3"
+          hasSummary && hasDetailedScores ? "grid gap-3 @[600px]:grid-cols-[minmax(0,1fr)_400px]" : "grid gap-3"
         }
       >
-        <div className="rounded-md border bg-muted/20 p-3">
-          <p className="text-sm leading-6 text-muted-foreground">{review.summary}</p>
-        </div>
+        {hasSummary && (
+          <div className="rounded-md border bg-muted/20 p-3">
+            <p className="text-sm leading-6 text-muted-foreground">{review.summary}</p>
+          </div>
+        )}
 
-        {review.detailedScores && review.detailedScores.length > 0 && (
+        {hasDetailedScores && (
           <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
             <div className="space-y-2">
-              {review.detailedScores.slice(0, 4).map((item) => (
+              {detailedScores.slice(0, 4).map((item) => (
                 <div key={`${review.id}-${item.key}`} className="relative min-w-0 rounded border px-2 py-1.5">
                   {item.subItems && item.subItems.length > 0 && (
                     <HoverCard>
@@ -146,7 +172,7 @@ export default function ReviewDetailedCard({
               ))}
             </div>
             <div className="space-y-2">
-              {review.detailedScores.slice(4, 7).map((item) => (
+              {detailedScores.slice(4, 7).map((item) => (
                 <div key={`${review.id}-${item.key}`} className="relative min-w-0 rounded border px-2 py-1.5">
                   {item.subItems && item.subItems.length > 0 && (
                     <HoverCard>

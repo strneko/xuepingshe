@@ -25,6 +25,7 @@ export default function CourseReviewSection({
   const [hasMore, setHasMore] = useState(initialReviews.hasMore);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [likingReviewId, setLikingReviewId] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -66,6 +67,69 @@ export default function CourseReviewSection({
       setIsLoading(false);
     }
   }, [courseId, fetchBasePath, hasMore, isLoading, nextCursor]);
+
+  const handleLikeReview = useCallback(
+    async (review: ReviewItem) => {
+      if (likingReviewId) {
+        return;
+      }
+
+      setLikingReviewId(review.id);
+      setLoadError(null);
+
+      const nextLiked = !review.liked;
+      setReviews((prev) =>
+        prev.map((item) =>
+          item.id === review.id
+            ? {
+                ...item,
+                liked: nextLiked,
+                likesCount: Math.max(0, item.likesCount + (nextLiked ? 1 : -1)),
+              }
+            : item,
+        ),
+      );
+
+      try {
+        const response = await fetch(`${fetchBasePath}/${courseId}/reviews/${review.id}/like`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("点赞失败");
+        }
+
+        const result: { reviewId: string; likesCount: number; liked: boolean } = await response.json();
+        setReviews((prev) =>
+          prev.map((item) =>
+            item.id === result.reviewId
+              ? {
+                  ...item,
+                  liked: result.liked,
+                  likesCount: result.likesCount,
+                }
+              : item,
+          ),
+        );
+      } catch {
+        setReviews((prev) =>
+          prev.map((item) =>
+            item.id === review.id
+              ? {
+                  ...item,
+                  liked: review.liked ?? false,
+                  likesCount: review.likesCount,
+                }
+              : item,
+          ),
+        );
+        setLoadError("点赞失败，请稍后重试");
+      } finally {
+        setLikingReviewId(null);
+      }
+    },
+    [courseId, fetchBasePath, likingReviewId],
+  );
 
   useEffect(() => {
     const target = sentinelRef.current;
@@ -114,7 +178,13 @@ export default function CourseReviewSection({
       <CardContent className="space-y-3">
         {reviews.map((review, index) => (
           <div key={review.id} className="space-y-2">
-            <ReviewDetailedCard review={review} showSourceCourse={showSourceCourse} />
+            <ReviewDetailedCard
+              review={review}
+              liked={Boolean(review.liked)}
+              disabled={likingReviewId === review.id}
+              onLike={() => void handleLikeReview(review)}
+              showSourceCourse={showSourceCourse}
+            />
 
             {index < reviews.length - 1 && <Separator className="mt-3" />}
           </div>

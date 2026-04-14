@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { ReviewScoreItem } from "@/app/course/[courseId]/_types";
 
 interface EvaluationDialogProps {
   open: boolean;
@@ -24,9 +25,14 @@ interface EvaluationDialogProps {
   courseName: string;
   teacher: string;
   deadline: string;
-  onSubmit?: () => void;
+  onSubmit?: (payload: EvaluationSubmitPayload) => Promise<void> | void;
 }
 
+export interface EvaluationSubmitPayload {
+  overallScore: number;
+  summary: string;
+  detailedScores: ReviewScoreItem[];
+}
 type Score = number | null;
 
 interface SubItem {
@@ -200,6 +206,21 @@ function clampWeight(weight: number) {
   return Math.min(100, Math.max(0, weight));
 }
 
+function toReviewScoreItems(categories: Category[]): ReviewScoreItem[] {
+  return categories.map((category) => ({
+    key: category.id,
+    label: category.title,
+    score: category.score,
+    weight: category.weight,
+    subItems: category.subItems.map((subItem) => ({
+      key: subItem.id,
+      label: subItem.name,
+      score: subItem.score,
+      weight: subItem.weight,
+    })),
+  }));
+}
+
 function StarRating({
   value,
   onChange,
@@ -280,6 +301,17 @@ export default function EvaluationDialog({
   }, [categories, categoryScores]);
 
   const overallScore = mode === "manual" ? manualScore : overallAutoScore;
+  const reviewPayload = useMemo<EvaluationSubmitPayload | null>(() => {
+    if (overallScore === null) {
+      return null;
+    }
+
+    return {
+      overallScore,
+      summary: comment.trim(),
+      detailedScores: toReviewScoreItems(categories),
+    };
+  }, [categories, comment, overallScore]);
 
   const updateCategory = (categoryId: string, updater: (category: Category) => Category) => {
     setCategories((previous) => previous.map((item) => (item.id === categoryId ? updater(item) : item)));
@@ -591,8 +623,12 @@ export default function EvaluationDialog({
           <Button
             type="button"
             disabled={overallScore === null}
-            onClick={() => {
-              onSubmit?.();
+            onClick={async () => {
+              if (!reviewPayload) {
+                return;
+              }
+
+              await onSubmit?.(reviewPayload);
               onOpenChange(false);
             }}
           >

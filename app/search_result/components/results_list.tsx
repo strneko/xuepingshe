@@ -194,7 +194,7 @@ export default function ResultsList() {
 
       <div className="overflow-hidden rounded-xl border bg-card">
         {items.map((item, index) => (
-          <div key={item.id}>
+          <div key={`${item.type}-${item.id}`}>
             <SearchResultCard
               href={item.href}
               type={item.type}
