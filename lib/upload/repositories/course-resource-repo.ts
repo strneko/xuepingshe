@@ -21,6 +21,19 @@ export function createCourseResource(data: Prisma.CourseResourceCreateInput) {
   return prisma.courseResource.create({ data });
 }
 
+export function markResourceDeleted(resourceId: string) {
+  return prisma.courseResource.update({
+    where: { id: resourceId },
+    data: { status: "DELETED" },
+  });
+}
+
+export function deleteDedupeEntriesByResourceId(resourceId: string) {
+  return prisma.resourceDedupeIndex.deleteMany({
+    where: { resourceId },
+  });
+}
+
 export function findInstantResource(params: { hashType: string; hashValue: string; fileSize: number }) {
   return prisma.resourceDedupeIndex.findUnique({
     where: {

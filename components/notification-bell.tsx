@@ -1,16 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo } from "react";
 import { Bell } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { notificationsMock, formatRelativeTime } from "@/lib/mocks/notifications";
+import { formatRelativeTime } from "@/lib/time/format-relative-time";
+import { useNotificationStore } from "@/lib/notifications/store";
 
 const PREVIEW_LIMIT = 5;
 
 export default function NotificationBell() {
-  const previewNotifications = notificationsMock.slice(0, PREVIEW_LIMIT);
-  const unreadCount = notificationsMock.filter((item) => !item.isRead).length;
+  const items = useNotificationStore((state) => state.items);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const initialize = useNotificationStore((state) => state.initialize);
+  const connectStream = useNotificationStore((state) => state.connectStream);
+  const disconnectStream = useNotificationStore((state) => state.disconnectStream);
+
+  const previewNotifications = useMemo(
+    () => [...items].sort((a, b) => Number(b.eventId) - Number(a.eventId)).slice(0, PREVIEW_LIMIT),
+    [items],
+  );
+
+  useEffect(() => {
+    void initialize(50);
+    connectStream();
+
+    return () => {
+      disconnectStream();
+    };
+  }, [connectStream, disconnectStream, initialize]);
+
   const unreadLabel = unreadCount > 99 ? "99+" : `${unreadCount}`;
 
   return (
@@ -18,7 +38,7 @@ export default function NotificationBell() {
       <HoverCardTrigger asChild>
         <Link
           href="/notifications"
-          aria-label="通知"
+          aria-label="消息"
           className="relative inline-flex size-9 items-center justify-center rounded-full transition-colors hover:bg-accent"
         >
           <Bell className="size-5" />
@@ -32,14 +52,14 @@ export default function NotificationBell() {
 
       <HoverCardContent align="end" sideOffset={10} className="w-96 p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="text-sm font-semibold">通知</span>
+          <span className="text-sm font-semibold">消息</span>
           <Link href="/notifications" className="text-xs text-muted-foreground hover:text-foreground">
             查看全部
           </Link>
         </div>
 
         {previewNotifications.length === 0 ? (
-          <div className="px-4 py-10 text-center text-sm text-muted-foreground">暂无通知</div>
+          <div className="px-4 py-10 text-center text-sm text-muted-foreground">暂无消息</div>
         ) : (
           <ScrollArea className="h-72">
             <div className="p-2">

@@ -1,0 +1,50 @@
+enum NotificationStatus {
+  ACTIVE
+  DELETED
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  eventId   BigInt             @unique @default(autoincrement())
+  eventType String
+  title     String
+  summary   String
+  href      String?
+  payload   Json?
+  status    NotificationStatus @default(ACTIVE)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  userNotifications UserNotification[]
+  dedupeKeys        NotificationEnqueueDedupe[]
+
+  @@index([createdAt])
+}
+
+model UserNotification {
+  id             String   @id @default(cuid())
+  userId         String
+  notificationId String
+  eventId        BigInt
+  isRead         Boolean  @default(false)
+  readAt         DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
+  @@index([userId, eventId])
+  @@index([userId, isRead, createdAt])
+}
+
+model NotificationEnqueueDedupe {
+  id             String   @id @default(cuid())
+  dedupeKey      String   @unique
+  notificationId String?
+  createdAt      DateTime @default(now())
+
+  notification Notification? @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+}

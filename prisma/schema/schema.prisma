@@ -26,6 +26,7 @@ model User {
   teacherReviewLikes TeacherReviewLike[]
   uploadSessions     ResourceUploadSession[]
   uploadedResources  CourseResource[]
+  userNotifications  UserNotification[]
 }
 
 model Post {
