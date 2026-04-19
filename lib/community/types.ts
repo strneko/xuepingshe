@@ -1,13 +1,11 @@
-export type CommunitySortTab = "latest-post" | "latest-reply" | "hot";
-
-export type CommunityAnnouncement = {
+export type CommunityAnnouncementItem = {
   id: string;
   title: string;
   href?: string;
   pinned: boolean;
 };
 
-export type CommunityPost = {
+export type CommunityPostListItem = {
   id: string;
   title: string;
   author: {

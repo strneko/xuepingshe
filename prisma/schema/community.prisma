@@ -1,0 +1,121 @@
+enum CommunityPostStatus {
+  PUBLISHED
+  DELETED
+}
+
+enum CommunityCommentStatus {
+  VISIBLE
+  DELETED
+}
+
+enum CommunityAnnouncementStatus {
+  PUBLISHED
+  OFFLINE
+}
+
+model CommunityPost {
+  id          String              @id @default(cuid())
+  authorId    String
+  title       String
+  contentHtml String
+  contentJson Json?
+  status      CommunityPostStatus @default(PUBLISHED)
+  likeCount   Int                 @default(0)
+  commentCount Int                @default(0)
+  hotScore    Int                 @default(0)
+  lastReplyAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  author   User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  topics   CommunityPostTopic[]
+  likes    CommunityPostLike[]
+  comments CommunityPostComment[]
+
+  @@index([status, createdAt])
+  @@index([status, lastReplyAt])
+  @@index([status, hotScore, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model CommunityDraft {
+  id          String   @id @default(cuid())
+  authorId    String
+  title       String
+  contentHtml String
+  contentJson Json?
+  topicNames  String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, updatedAt])
+}
+
+model CommunityTopic {
+  id            String               @id @default(cuid())
+  name          String               @unique
+  postCount     Int                  @default(0)
+  followerCount Int                  @default(0)
+  isRecommended Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  postTopics CommunityPostTopic[]
+
+  @@index([postCount])
+}
+
+model CommunityPostTopic {
+  postId  String
+  topicId String
+
+  post  CommunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  topic CommunityTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([postId, topicId])
+  @@index([topicId])
+}
+
+model CommunityPostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId, createdAt])
+}
+
+model CommunityPostComment {
+  id               String               @id @default(cuid())
+  postId           String
+  authorId         String
+  content          String
+  status           CommunityCommentStatus @default(VISIBLE)
+  replyToCommentId String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model CommunityAnnouncement {
+  id        String                    @id @default(cuid())
+  title     String
+  href      String?
+  pinned    Boolean                   @default(true)
+  status    CommunityAnnouncementStatus @default(PUBLISHED)
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+
+  @@index([status, pinned, createdAt])
+}

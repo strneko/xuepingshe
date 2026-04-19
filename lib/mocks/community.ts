@@ -24,6 +24,7 @@ export const communityAnnouncements: CommunityAnnouncement[] = [
 export const communityPosts: CommunityPost[] = [
   {
     id: "p1",
+    title: "高数复习节奏怎么安排更高效？",
     author: { nickname: "小陈", avatarUrl: "" },
     createdAt: "2026-03-07T10:22:40+08:00",
     lastReplyAt: "2026-03-07T10:40:12+08:00",
@@ -37,6 +38,7 @@ export const communityPosts: CommunityPost[] = [
   },
   {
     id: "p2",
+    title: "数据结构实验课准备经验求助",
     author: { nickname: "Yuki", avatarUrl: "" },
     createdAt: "2026-03-07T09:58:15+08:00",
     lastReplyAt: "2026-03-07T10:46:20+08:00",
@@ -49,6 +51,7 @@ export const communityPosts: CommunityPost[] = [
   },
   {
     id: "p3",
+    title: "大学英语口语平时分提升建议",
     author: { nickname: "阿泽", avatarUrl: "" },
     createdAt: "2026-03-07T07:14:03+08:00",
     lastReplyAt: "2026-03-07T08:12:11+08:00",
@@ -62,6 +65,7 @@ export const communityPosts: CommunityPost[] = [
   },
   {
     id: "p4",
+    title: "计算机基础脑图模板分享",
     author: { nickname: "Kira", avatarUrl: "" },
     createdAt: "2026-03-06T20:26:49+08:00",
     lastReplyAt: "2026-03-07T09:12:01+08:00",
@@ -78,6 +82,7 @@ export const communityPosts: CommunityPost[] = [
   },
   {
     id: "p5",
+    title: "体育课总评提升小技巧",
     author: { nickname: "小林", avatarUrl: "" },
     createdAt: "2026-03-05T16:05:10+08:00",
     lastReplyAt: "2026-03-06T08:20:33+08:00",
@@ -96,6 +101,7 @@ export const communityPosts: CommunityPost[] = [
 
     return {
       id: `p${id}`,
+      title: `社区测试帖子 ${id}`,
       author: {
         nickname: `同学${id}`,
         avatarUrl: "",

@@ -23,6 +23,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       </header>
 
       <section className="space-y-3">
+        <h3 className="line-clamp-2 text-base font-semibold text-foreground">{post.title}</h3>
         <p className="line-clamp-4 text-sm leading-6 text-foreground/90">{post.content}</p>
 
         {post.images.length > 0 ? (
