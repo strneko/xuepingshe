@@ -70,7 +70,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { postId } = await context.params;
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     let payload: unknown;
     try {

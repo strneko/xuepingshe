@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { CommunityPost } from "@/app/community/_types";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 type UseCommunityPostLikeOptions<T extends CommunityPost | null> = {
   initialPost: T;
@@ -16,6 +17,8 @@ export function useCommunityPostLike<T extends CommunityPost | null>({
 }: UseCommunityPostLikeOptions<T>) {
   const [post, setPost] = React.useState(initialPost);
   const [liking, setLiking] = React.useState(false);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
 
   React.useEffect(() => {
     setPost(initialPost);
@@ -23,6 +26,11 @@ export function useCommunityPostLike<T extends CommunityPost | null>({
 
   const toggleLike = React.useCallback(async () => {
     if (liking || !post) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      openAuthDialog();
       return;
     }
 
@@ -74,7 +82,7 @@ export function useCommunityPostLike<T extends CommunityPost | null>({
     } finally {
       setLiking(false);
     }
-  }, [liking, onPostChange, post]);
+  }, [isLoggedIn, liking, onPostChange, openAuthDialog, post]);
 
   return {
     post,
@@ -90,10 +98,17 @@ type UseCommunityPostsLikeOptions = {
 
 export function useCommunityPostsLike({ setPosts }: UseCommunityPostsLikeOptions) {
   const [likingPostIds, setLikingPostIds] = React.useState<Set<string>>(new Set());
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
 
   const toggleLike = React.useCallback(
     async (postId: string) => {
       if (likingPostIds.has(postId)) {
+        return;
+      }
+
+      if (!isLoggedIn) {
+        openAuthDialog();
         return;
       }
 
@@ -169,7 +184,7 @@ export function useCommunityPostsLike({ setPosts }: UseCommunityPostsLikeOptions
         });
       }
     },
-    [likingPostIds, setPosts],
+    [isLoggedIn, likingPostIds, openAuthDialog, setPosts],
   );
 
   return {

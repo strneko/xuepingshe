@@ -9,7 +9,7 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { draftId } = await context.params;
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     const draft = await prisma.communityDraft.findFirst({
       where: {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { draftId } = await context.params;
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     let payload: unknown;
     try {
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { draftId } = await context.params;
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     const deleted = await prisma.communityDraft.deleteMany({
       where: {

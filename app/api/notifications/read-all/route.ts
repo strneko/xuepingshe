@@ -5,7 +5,7 @@ import { resolveCurrentUserId } from "@/lib/notifications/service/shared";
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
     const result = await markAllNotificationsRead(userId);
     return NextResponse.json(result);
   } catch (error) {

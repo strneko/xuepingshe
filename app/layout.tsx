@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import AuthDialog from "@/components/auth-dialog";
 
 export const metadata: Metadata = {
   title: "学评社",
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="zh">
       <body>
         <Navbar />
+        <AuthDialog />
         {children}
         <Toaster richColors position="top-right" />
       </body>

@@ -5,7 +5,7 @@ import { syncNotifications } from "@/lib/notifications/service/sync-service";
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     const sinceEventId = parseEventId(request.nextUrl.searchParams.get("sinceEventId"), "INVALID_SINCE_EVENT_ID");
     const limit = parseLimit(request.nextUrl.searchParams.get("limit"), {

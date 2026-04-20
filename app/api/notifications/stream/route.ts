@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     const stream = createNotificationEventStream(userId);
 

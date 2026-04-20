@@ -7,6 +7,7 @@ import { CommunityComment, CommunityPost } from "@/app/community/_types";
 import CommunityPostDetailContent from "./community-post-detail-content";
 import { toast } from "sonner";
 import { useCommunityPostLike } from "@/app/community/hooks/use-community-post-like";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 type CommunityPostDetailDialogProps = {
   post: CommunityPost | null;
@@ -35,6 +36,8 @@ export default function CommunityPostDetailDialog({
   const [commentValue, setCommentValue] = useState("");
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
 
   useEffect(() => {
     if (!open || !post?.id) {
@@ -91,6 +94,11 @@ export default function CommunityPostDetailDialog({
 
   const handleSubmitComment = async () => {
     if (!dialogPost || commentSubmitting) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      openAuthDialog();
       return;
     }
 

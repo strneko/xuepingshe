@@ -26,7 +26,7 @@ function normalizeTopicNames(value: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     let payload: unknown;
     try {
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
     const limit = parseLimit(request.nextUrl.searchParams.get("limit"), { defaultValue: 20, maxValue: 50 });
 
     const drafts = await prisma.communityDraft.findMany({

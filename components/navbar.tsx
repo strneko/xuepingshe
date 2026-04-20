@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -7,6 +8,8 @@ import { Store } from "lucide-react";
 import { usePathname } from "next/navigation";
 import NotificationBell from "./notification-bell";
 import UserHover from "./user-hover";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 const SearchInput = dynamic(() => import("./search-input"), {
   ssr: false,
@@ -16,6 +19,13 @@ const SearchInput = dynamic(() => import("./search-input"), {
 export default function Navbar() {
   const pathname = usePathname();
   const showSearch = pathname !== "/" && pathname !== "/myclass";
+  const user = useAuthStore((state) => state.user);
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
+
+  useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
 
   return (
     <nav className="sticky top-0 z-50 flex w-full h-16 px-[10vw] border-b shadow-sm items-center justify-between bg-background">
@@ -36,8 +46,16 @@ export default function Navbar() {
         >
           <Store className="size-5" />
         </Link>
-        <NotificationBell />
-        <UserHover />
+        {user ? (
+          <>
+            <NotificationBell />
+            <UserHover />
+          </>
+        ) : (
+          <Button type="button" onClick={openAuthDialog}>
+            登录
+          </Button>
+        )}
       </div>
     </nav>
   );

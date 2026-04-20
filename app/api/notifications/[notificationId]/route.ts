@@ -11,7 +11,7 @@ interface RouteContext {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
     const { notificationId } = await context.params;
 
     if (!notificationId.trim()) {

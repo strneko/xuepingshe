@@ -6,7 +6,7 @@ import { Ellipsis, Heart, MessageCircle } from "lucide-react";
 import UserInfoCard from "@/components/user-info-card";
 import { Button } from "@/components/ui/button";
 import { CommunityComment, CommunityPost } from "@/app/community/_types";
-import { UserProfile } from "@/lib/stores/auth-store";
+import { UserProfile, useAuthStore } from "@/lib/stores/auth-store";
 import { toast } from "sonner";
 import { useCommunityPostLike } from "@/app/community/hooks/use-community-post-like";
 
@@ -24,6 +24,8 @@ export default function CommunityPostDetailShell({
   authorProfile,
 }: CommunityPostDetailShellProps) {
   const { post, setPost, liking, toggleLike } = useCommunityPostLike({ initialPost });
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
   const [commentItems, setCommentItems] = React.useState<CommunityComment[]>(comments);
   const [commentValue, setCommentValue] = React.useState("");
   const [commentSubmitting, setCommentSubmitting] = React.useState(false);
@@ -44,6 +46,11 @@ export default function CommunityPostDetailShell({
 
   const handleSubmitComment = React.useCallback(async () => {
     if (commentSubmitting) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      openAuthDialog();
       return;
     }
 
@@ -95,7 +102,7 @@ export default function CommunityPostDetailShell({
     } finally {
       setCommentSubmitting(false);
     }
-  }, [commentSubmitting, commentValue, post.id, setPost]);
+  }, [commentSubmitting, commentValue, isLoggedIn, openAuthDialog, post.id, setPost]);
 
   const handleOpenMore = React.useCallback(() => {
     document.getElementById("post-more")?.scrollIntoView({ behavior: "smooth", block: "start" });

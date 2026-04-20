@@ -1,27 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { getSessionUserId } from "@/lib/auth/session";
 import { NotificationError } from "../errors";
 
-const DEMO_USER_ID = "demo-user";
-
-export async function ensureDemoUser() {
-  await prisma.user.upsert({
-    where: { id: DEMO_USER_ID },
-    update: {
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-    create: {
-      id: DEMO_USER_ID,
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-  });
-
-  return DEMO_USER_ID;
-}
-
-export async function resolveCurrentUserId(headerUserId?: string | null) {
-  const userId = headerUserId?.trim() || (await ensureDemoUser());
+export async function resolveCurrentUserId(source?: unknown) {
+  const userId = getSessionUserId(source);
 
   if (!userId) {
     throw new NotificationError("用户未登录", 401, "UNAUTHORIZED");

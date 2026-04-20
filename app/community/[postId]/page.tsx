@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
-import { resolveCurrentUserId, stripHtml } from "@/lib/community/shared";
+import { resolveOptionalCurrentUserId, stripHtml } from "@/lib/community/shared";
 import type { UserProfile } from "@/lib/stores/auth-store";
 import CommunityPostDetailShell from "../components/community-post-detail-shell";
 
@@ -13,7 +13,7 @@ type PageProps = {
 export default async function CommunityPostPage({ params }: PageProps) {
   const { postId } = await params;
   const headerStore = await headers();
-  const userId = await resolveCurrentUserId(headerStore.get("x-user-id"));
+  const userId = await resolveOptionalCurrentUserId(headerStore);
 
   const [post, comments] = await prisma.$transaction([
     prisma.communityPost.findFirst({
@@ -51,15 +51,19 @@ export default async function CommunityPostPage({ params }: PageProps) {
             },
           },
         },
-        likes: {
-          where: {
-            userId,
-          },
-          select: {
-            id: true,
-          },
-          take: 1,
-        },
+        ...(userId
+          ? {
+              likes: {
+                where: {
+                  userId,
+                },
+                select: {
+                  id: true,
+                },
+                take: 1,
+              },
+            }
+          : {}),
       },
     }),
     prisma.communityPostComment.findMany({
@@ -112,7 +116,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
     images: [],
     tags: post.topics.map((item) => item.topic.name),
     likesCount: post.likeCount,
-    isLiked: post.likes.length > 0,
+    isLiked: Boolean(post.likes?.length),
     commentsCount: post.commentCount,
     hotScore: post.hotScore,
   };

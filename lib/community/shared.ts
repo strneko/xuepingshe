@@ -1,11 +1,9 @@
-import { prisma } from "@/lib/prisma";
-
-const DEMO_USER_ID = "demo-user";
+import { getSessionUserId } from "@/lib/auth/session";
 
 export type CommunitySort = "latest-post" | "latest-reply" | "hottest";
 
-export async function resolveCurrentUserId(headerUserId?: string | null) {
-  const userId = headerUserId?.trim() || (await ensureDemoUser());
+export async function resolveCurrentUserId(source?: unknown) {
+  const userId = getSessionUserId(source);
 
   if (!userId) {
     throw new Error("用户未登录");
@@ -14,21 +12,8 @@ export async function resolveCurrentUserId(headerUserId?: string | null) {
   return userId;
 }
 
-async function ensureDemoUser() {
-  await prisma.user.upsert({
-    where: { id: DEMO_USER_ID },
-    update: {
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-    create: {
-      id: DEMO_USER_ID,
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-  });
-
-  return DEMO_USER_ID;
+export async function resolveOptionalCurrentUserId(source?: unknown) {
+  return getSessionUserId(source);
 }
 
 export function parseLimit(raw: string | null, options: { defaultValue: number; maxValue: number }) {

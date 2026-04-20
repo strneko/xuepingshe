@@ -10,7 +10,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     const cursor = parseOptionalCursor(request.nextUrl.searchParams.get("cursor"));
     const limit = parseLimit(request.nextUrl.searchParams.get("limit"), {

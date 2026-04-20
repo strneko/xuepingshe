@@ -23,6 +23,7 @@ export default function UserInfoCard({
   showMessageButton = false,
 }: UserInfoCardProps) {
   const router = useRouter();
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
   const clearUser = useAuthStore((state) => state.clearUser);
   const [isFollowing, setIsFollowing] = React.useState(false);
 
@@ -31,8 +32,15 @@ export default function UserInfoCard({
   };
 
   const handleLogoutClick = () => {
-    clearUser();
-    router.push("/");
+    void (async () => {
+      await fetch("/api/auth/logout", { method: "POST" });
+      clearUser();
+      router.push("/");
+    })();
+  };
+
+  const handleLoginClick = () => {
+    openAuthDialog();
   };
 
   return (
@@ -44,29 +52,39 @@ export default function UserInfoCard({
         </Avatar>
 
         <p className="text-sm font-medium text-foreground">{user?.nickname ?? "未登录"}</p>
-        <div className="flex justify-between w-full px-[15%]">
-          <p className="text-xs text-muted-foreground">评价数：{user?.reviewCount ?? 0}</p>
-          <p className="text-xs text-muted-foreground">被点赞数：{user?.likedCount ?? 0}</p>
-        </div>
-        {!hidePoints ? <p className="text-xs text-muted-foreground">积分: {user?.points ?? 0}</p> : null}
-        {showFollowButton ? (
-          <div className="w-full space-y-2">
-            <Button
-              type="button"
-              variant={isFollowing ? "outline" : "default"}
-              className="w-full"
-              onClick={() => setIsFollowing((value) => !value)}
-            >
-              {isFollowing ? "已关注" : "+ 关注"}
-            </Button>
-            {showMessageButton ? (
-              <Button type="button" variant="outline" className="w-full" onClick={() => router.push("/community")}>
-                私信
-              </Button>
+        {user ? (
+          <>
+            <div className="flex justify-between w-full px-[15%]">
+              <p className="text-xs text-muted-foreground">评价数：{user.reviewCount}</p>
+              <p className="text-xs text-muted-foreground">被点赞数：{user.likedCount}</p>
+            </div>
+            {!hidePoints ? <p className="text-xs text-muted-foreground">积分: {user.points}</p> : null}
+            {showFollowButton ? (
+              <div className="w-full space-y-2">
+                <Button
+                  type="button"
+                  variant={isFollowing ? "outline" : "default"}
+                  className="w-full"
+                  onClick={() => setIsFollowing((value) => !value)}
+                >
+                  {isFollowing ? "已关注" : "+ 关注"}
+                </Button>
+                {showMessageButton ? (
+                  <Button type="button" variant="outline" className="w-full" onClick={() => router.push("/community")}>
+                    私信
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
+          </>
+        ) : (
+          <div className="w-full">
+            <Button type="button" className="w-full" onClick={handleLoginClick}>
+              登录
+            </Button>
           </div>
-        ) : null}
-        {!hideActions ? (
+        )}
+        {!hideActions && user ? (
           <>
             <Button type="button" variant="outline" className="w-full" onClick={handleProfileClick}>
               账户资料

@@ -7,6 +7,7 @@ import {
   parseOffsetCursor,
   parseSort,
   resolveCurrentUserId,
+  resolveOptionalCurrentUserId,
   stripHtml,
 } from "@/lib/community/shared";
 
@@ -80,7 +81,7 @@ function buildOrderBy(sort: SortOrderInput) {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveOptionalCurrentUserId(request);
     const sort = parseSort(request.nextUrl.searchParams.get("sort"));
     const limit = parseLimit(request.nextUrl.searchParams.get("limit"), { defaultValue: 8, maxValue: 30 });
     const offset = parseOffsetCursor(request.nextUrl.searchParams.get("cursor"));
@@ -114,15 +115,19 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          likes: {
-            where: {
-              userId,
-            },
-            select: {
-              id: true,
-            },
-            take: 1,
-          },
+          ...(userId
+            ? {
+                likes: {
+                  where: {
+                    userId,
+                  },
+                  select: {
+                    id: true,
+                  },
+                  take: 1,
+                },
+              }
+            : {}),
         },
       }),
       prisma.communityPost.count({ where: { status: "PUBLISHED" } }),
@@ -146,7 +151,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
+    const userId = await resolveCurrentUserId(request);
 
     let payload: unknown;
     try {
