@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,11 +9,22 @@ import { useRouter } from "next/navigation";
 
 interface UserInfoCardProps {
   user: UserProfile | null;
+  hideActions?: boolean;
+  hidePoints?: boolean;
+  showFollowButton?: boolean;
+  showMessageButton?: boolean;
 }
 
-export default function UserInfoCard({ user }: UserInfoCardProps) {
+export default function UserInfoCard({
+  user,
+  hideActions = false,
+  hidePoints = false,
+  showFollowButton = false,
+  showMessageButton = false,
+}: UserInfoCardProps) {
   const router = useRouter();
   const clearUser = useAuthStore((state) => state.clearUser);
+  const [isFollowing, setIsFollowing] = React.useState(false);
 
   const handleProfileClick = () => {
     router.push("/account");
@@ -36,13 +48,34 @@ export default function UserInfoCard({ user }: UserInfoCardProps) {
           <p className="text-xs text-muted-foreground">评价数：{user?.reviewCount ?? 0}</p>
           <p className="text-xs text-muted-foreground">被点赞数：{user?.likedCount ?? 0}</p>
         </div>
-        <p className="text-xs text-muted-foreground">积分: {user?.points ?? 0}</p>
-        <Button type="button" variant="outline" className="w-full" onClick={handleProfileClick}>
-          账户资料
-        </Button>
-        <Button type="button" variant="destructive" className="w-full" onClick={handleLogoutClick}>
-          退出登录
-        </Button>
+        {!hidePoints ? <p className="text-xs text-muted-foreground">积分: {user?.points ?? 0}</p> : null}
+        {showFollowButton ? (
+          <div className="w-full space-y-2">
+            <Button
+              type="button"
+              variant={isFollowing ? "outline" : "default"}
+              className="w-full"
+              onClick={() => setIsFollowing((value) => !value)}
+            >
+              {isFollowing ? "已关注" : "+ 关注"}
+            </Button>
+            {showMessageButton ? (
+              <Button type="button" variant="outline" className="w-full" onClick={() => router.push("/community")}>
+                私信
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        {!hideActions ? (
+          <>
+            <Button type="button" variant="outline" className="w-full" onClick={handleProfileClick}>
+              账户资料
+            </Button>
+            <Button type="button" variant="destructive" className="w-full" onClick={handleLogoutClick}>
+              退出登录
+            </Button>
+          </>
+        ) : null}
       </CardContent>
     </Card>
   );

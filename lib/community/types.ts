@@ -18,6 +18,7 @@ export type CommunityPostListItem = {
   images: string[];
   tags: string[];
   likesCount: number;
+  isLiked: boolean;
   commentsCount: number;
   hotScore: number;
 };

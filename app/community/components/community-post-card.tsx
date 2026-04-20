@@ -3,14 +3,34 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle } from "lucide-react";
 import { CommunityPost } from "@/app/community/_types";
 import { formatRelativeTime } from "@/lib/time/format-relative-time";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type CommunityPostCardProps = {
   post: CommunityPost;
+  liking?: boolean;
+  onToggleLike?: (postId: string) => void;
+  onOpenPost?: (postId: string) => void;
 };
 
-export default function CommunityPostCard({ post }: CommunityPostCardProps) {
+export default function CommunityPostCard({ post, liking = false, onToggleLike, onOpenPost }: CommunityPostCardProps) {
+  const handleOpenPost = () => {
+    onOpenPost?.(post.id);
+  };
+
   return (
-    <article className="space-y-3">
+    <article
+      className="cursor-pointer space-y-3 rounded-lg transition hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={handleOpenPost}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleOpenPost();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
       <header className="flex items-center gap-3">
         <Avatar>
           <AvatarImage src={post.author.avatarUrl ?? ""} alt={post.author.nickname} />
@@ -46,10 +66,24 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
           ))}
         </div>
         <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Heart className="size-3.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-auto px-1 py-0 text-xs text-muted-foreground",
+              post.isLiked && "text-rose-500 hover:text-rose-500",
+            )}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleLike?.(post.id);
+            }}
+            disabled={liking}
+            aria-label={post.isLiked ? "取消点赞" : "点赞"}
+          >
+            <Heart className={cn("size-3.5", post.isLiked && "fill-current")} />
             {post.likesCount}
-          </span>
+          </Button>
           <span className="inline-flex items-center gap-1">
             <MessageCircle className="size-3.5" />
             {post.commentsCount}

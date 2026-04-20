@@ -20,6 +20,18 @@ export type CommunityPost = {
   images: string[];
   tags: string[];
   likesCount: number;
+  isLiked: boolean;
   commentsCount: number;
   hotScore: number;
+};
+
+export type CommunityComment = {
+  id: string;
+  content: string;
+  replyToCommentId?: string | null;
+  createdAt: string;
+  author: {
+    nickname: string;
+    avatarUrl?: string;
+  };
 };

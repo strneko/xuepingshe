@@ -43,6 +43,7 @@ function toPostListItem(post: {
   likeCount: number;
   commentCount: number;
   hotScore: number;
+  likes?: Array<{ id: string }>;
   author: { name: string | null };
   topics: Array<{ topic: { name: string } }>;
 }): CommunityPostListItem {
@@ -59,6 +60,7 @@ function toPostListItem(post: {
     images: [],
     tags: post.topics.map((item) => item.topic.name),
     likesCount: post.likeCount,
+    isLiked: Boolean(post.likes?.length),
     commentsCount: post.commentCount,
     hotScore: post.hotScore,
   };
@@ -78,6 +80,7 @@ function buildOrderBy(sort: SortOrderInput) {
 
 export async function GET(request: NextRequest) {
   try {
+    const userId = await resolveCurrentUserId(request.headers.get("x-user-id"));
     const sort = parseSort(request.nextUrl.searchParams.get("sort"));
     const limit = parseLimit(request.nextUrl.searchParams.get("limit"), { defaultValue: 8, maxValue: 30 });
     const offset = parseOffsetCursor(request.nextUrl.searchParams.get("cursor"));
@@ -110,6 +113,15 @@ export async function GET(request: NextRequest) {
                 },
               },
             },
+          },
+          likes: {
+            where: {
+              userId,
+            },
+            select: {
+              id: true,
+            },
+            take: 1,
           },
         },
       }),
@@ -249,7 +261,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: "发布成功",
-      item: toPostListItem(created),
+      item: {
+        ...toPostListItem(created),
+        isLiked: false,
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "发布帖子失败";

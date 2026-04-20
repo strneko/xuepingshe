@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CommunityAnnouncement, CommunitySortTab, CommunityPost } from "./_types";
 import CommunityAnnouncements from "./components/community-announcements";
+import CommunityPostDetailDialog from "./components/community-post-detail-dialog";
 import CommunityPostList from "./components/community-post-list";
 import CommunitySubnav from "./components/community-subnav";
+import { useCommunityPostsLike } from "./hooks/use-community-post-like";
 
 const PAGE_SIZE = 8;
 
@@ -23,6 +25,8 @@ function mapSortTabToApiValue(tab: CommunitySortTab) {
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<CommunitySortTab>("latest-post");
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const { likingPostIds, toggleLike } = useCommunityPostsLike({ setPosts });
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [announcements, setAnnouncements] = useState<CommunityAnnouncement[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +38,7 @@ export default function CommunityPage() {
   const requestSeqRef = useRef(0);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const selectedPost = selectedPostId ? (posts.find((post) => post.id === selectedPostId) ?? null) : null;
 
   const loadPosts = useCallback(
     async (options?: { reset?: boolean }) => {
@@ -154,11 +159,41 @@ export default function CommunityPage() {
     return () => observer.disconnect();
   }, [hasMore, loadPosts]);
 
+  const handleToggleLike = useCallback(
+    async (postId: string) => {
+      await toggleLike(postId);
+    },
+    [toggleLike],
+  );
+
+  const handleOpenPost = useCallback((postId: string) => {
+    setSelectedPostId(postId);
+  }, []);
+
+  const handlePostUpdate = useCallback((nextPost: CommunityPost) => {
+    setPosts((current) => current.map((post) => (post.id === nextPost.id ? nextPost : post)));
+  }, []);
+
   return (
     <main className="px-[10vw] space-y-4">
       <CommunitySubnav activeTab={activeTab} onTabChange={setActiveTab} />
       <CommunityAnnouncements items={announcements} />
-      <CommunityPostList posts={posts} />
+      <CommunityPostList
+        posts={posts}
+        likingPostIds={likingPostIds}
+        onToggleLike={handleToggleLike}
+        onOpenPost={handleOpenPost}
+      />
+      <CommunityPostDetailDialog
+        post={selectedPost}
+        open={Boolean(selectedPostId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPostId(null);
+          }
+        }}
+        onPostChange={handlePostUpdate}
+      />
       <div ref={loaderRef} className="py-2 text-center text-xs text-muted-foreground">
         {isLoading ? "加载中..." : hasMore ? "上滑加载更多" : `已展示全部 ${posts.length} 条帖子`}
       </div>
