@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import AuthDialog from "@/components/auth-dialog";
+import NotificationProvider from "@/components/notification-provider";
 
 export const metadata: Metadata = {
   title: "学评社",
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body>
         <Navbar />
         <AuthDialog />
+        <NotificationProvider />
         {children}
         <Toaster richColors position="top-right" />
       </body>

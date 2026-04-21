@@ -1,10 +1,23 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { UserRecordTab } from "./record-tabs";
 import BrowseHistoryItem from "./browse-history-item";
+import CommentHistoryItem from "./comment-history-item";
+import FollowerHistoryItem from "./follower-history-item";
+import FollowHistoryItem from "./follow-history-item";
 import LikedHistoryItem from "./liked-history-item";
 import PostHistoryItem from "./post-history-item";
 import ReviewHistoryItem from "./review-history-item";
-import { BrowseRecord, EMPTY_TEXT_MAP, HistoryItem, LikedRecord, PostRecord, ReviewRecord } from "./record-types";
+import {
+  BrowseRecord,
+  CommentRecord,
+  EMPTY_TEXT_MAP,
+  FollowerRecord,
+  FollowRecord,
+  HistoryItem,
+  LikedRecord,
+  PostRecord,
+  ReviewRecord,
+} from "./record-types";
 
 interface HistoryListProps {
   tab: UserRecordTab;
@@ -33,6 +46,18 @@ export default function HistoryList({ tab, items }: HistoryListProps) {
 
         if (tab === "post") {
           return <PostHistoryItem key={item.id} item={item as PostRecord} />;
+        }
+
+        if (tab === "comment") {
+          return <CommentHistoryItem key={item.id} item={item as CommentRecord} />;
+        }
+
+        if (tab === "following") {
+          return <FollowHistoryItem key={item.id} item={item as FollowRecord} />;
+        }
+
+        if (tab === "followers") {
+          return <FollowerHistoryItem key={item.id} item={item as FollowerRecord} />;
         }
 
         return <LikedHistoryItem key={item.id} item={item as LikedRecord} />;

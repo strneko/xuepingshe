@@ -1,14 +1,9 @@
 import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { NotificationError } from "../errors";
 import { buildDefaultDedupeKey, NotificationEnqueuePayload } from "../infra/queue";
 import { notificationSseManager } from "../infra/sse-connection-manager";
-import {
-  countUnreadByUser,
-  createEnqueueDedupeKey,
-  createNotification,
-  createUserNotifications,
-  linkEnqueueDedupeToNotification,
-} from "../repositories/notification-repo";
+import { countUnreadByUser } from "../repositories/notification-repo";
 
 function parseTitle(payload: Record<string, unknown>, eventType: string) {
   const title = payload.title;
@@ -53,51 +48,69 @@ export async function enqueueNotification(input: NotificationEnqueuePayload) {
 
   const dedupeKey = input.dedupeKey?.trim() || buildDefaultDedupeKey({ ...input, receiverIds });
 
-  try {
-    await createEnqueueDedupeKey(dedupeKey);
-  } catch (error) {
-    const known = error as Prisma.PrismaClientKnownRequestError;
-    if (known?.code === "P2002") {
-      return {
-        accepted: true,
-        jobId: dedupeKey,
-      };
+  const result = await prisma.$transaction(async (tx) => {
+    try {
+      await tx.notificationEnqueueDedupe.create({
+        data: { dedupeKey },
+      });
+    } catch (error) {
+      const known = error as Prisma.PrismaClientKnownRequestError;
+      if (known?.code === "P2002") {
+        return { accepted: true, jobId: dedupeKey, notification: null };
+      }
+
+      throw error;
     }
 
-    throw error;
-  }
+    const notification = await tx.notification.create({
+      data: {
+        eventType: input.eventType,
+        title: parseTitle(input.payload, input.eventType),
+        summary: parseSummary(input.payload),
+        href: parseHref(input.payload),
+        payload: input.payload as Prisma.InputJsonValue,
+        status: "ACTIVE",
+      },
+    });
 
-  const notification = await createNotification({
-    eventType: input.eventType,
-    title: parseTitle(input.payload, input.eventType),
-    summary: parseSummary(input.payload),
-    href: parseHref(input.payload),
-    payload: input.payload,
-    status: "ACTIVE",
+    await tx.userNotification.createMany({
+      data: receiverIds.map((userId) => ({
+        userId,
+        notificationId: notification.id,
+        eventId: notification.eventId,
+        isRead: false,
+        deliveredAt: new Date(),
+      })),
+      skipDuplicates: true,
+    });
+
+    await tx.notificationEnqueueDedupe.update({
+      where: { dedupeKey },
+      data: { notificationId: notification.id },
+    });
+
+    return { accepted: true, jobId: notification.eventId.toString(), notification };
   });
 
-  await createUserNotifications(
-    receiverIds.map((userId) => ({
-      userId,
-      notificationId: notification.id,
-      eventId: notification.eventId,
-      isRead: false,
-      deliveredAt: new Date(),
-    })),
-  );
-
-  await linkEnqueueDedupeToNotification(dedupeKey, notification.id);
+  if (!result.notification) {
+    return {
+      accepted: true,
+      jobId: result.jobId,
+    };
+  }
 
   await Promise.all(
     receiverIds.map(async (userId) => {
       const unreadCount = await countUnreadByUser(userId);
       notificationSseManager.publishNotification(userId, {
-        eventId: notification.eventId.toString(),
-        notificationId: notification.id,
-        title: notification.title,
-        summary: notification.summary,
-        href: notification.href ?? undefined,
-        createdAt: notification.createdAt.toISOString(),
+        eventId: result.notification.eventId.toString(),
+        notificationId: result.notification.id,
+        eventType: result.notification.eventType,
+        title: result.notification.title,
+        summary: result.notification.summary,
+        href: result.notification.href ?? undefined,
+        payload: (result.notification.payload as Record<string, unknown> | null) ?? undefined,
+        createdAt: result.notification.createdAt.toISOString(),
         unreadCount,
       });
     }),
@@ -105,6 +118,6 @@ export async function enqueueNotification(input: NotificationEnqueuePayload) {
 
   return {
     accepted: true,
-    jobId: notification.eventId.toString(),
+    jobId: result.notification.eventId.toString(),
   };
 }

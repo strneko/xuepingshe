@@ -1,9 +1,11 @@
 export interface NotificationItem {
   id: string;
   eventId: string;
+  eventType: string;
   title: string;
   summary: string;
   href?: string;
+  payload?: Record<string, unknown>;
   createdAt: string;
   isRead: boolean;
 }
@@ -25,9 +27,11 @@ export interface NotificationSyncResult {
 export interface NotificationPushEvent {
   eventId: string;
   notificationId: string;
+  eventType: string;
   title: string;
   summary: string;
   href?: string;
+  payload?: Record<string, unknown>;
   createdAt: string;
   unreadCount: number;
 }

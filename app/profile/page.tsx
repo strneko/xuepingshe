@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import HistoryList from "./components/history-list";
 import RecordTabs, { UserRecordTab } from "./components/record-tabs";
 import Pagination from "@/components/pagination";
@@ -7,50 +8,110 @@ import UserInfoCard from "@/components/user-info-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useSearchParams } from "next/navigation";
-import { BrowseRecord, LikedRecord, PostRecord, ReviewRecord } from "./components/record-types";
+import {
+  BrowseRecord,
+  CommentRecord,
+  FollowerRecord,
+  FollowRecord,
+  LikedRecord,
+  PostRecord,
+  ReviewRecord,
+} from "./components/record-types";
 
-const browseRecords: BrowseRecord[] = [
-  { id: "b1", courseName: "高等数学", visitedAt: "2026-03-01 10:20" },
-  { id: "b2", courseName: "大学英语", visitedAt: "2026-02-28 19:10" },
-  { id: "b3", courseName: "计算机基础", visitedAt: "2026-02-27 08:40" },
-];
+type ProfileResponse = {
+  browseRecords: BrowseRecord[];
+  reviewRecords: ReviewRecord[];
+  postRecords: PostRecord[];
+  commentRecords: CommentRecord[];
+  likedRecords: LikedRecord[];
+  followingRecords: FollowRecord[];
+  followerRecords: FollowerRecord[];
+  message?: string;
+};
 
-const reviewRecords: ReviewRecord[] = [
-  { id: "r1", courseName: "计算机基础", score: "4.8", reviewedAt: "2026-03-01 11:00" },
-  { id: "r2", courseName: "高等数学", score: "4.6", reviewedAt: "2026-02-24 15:35" },
-];
+const EMPTY_PROFILE_DATA: Omit<ProfileResponse, "message"> = {
+  browseRecords: [],
+  reviewRecords: [],
+  postRecords: [],
+  commentRecords: [],
+  likedRecords: [],
+  followingRecords: [],
+  followerRecords: [],
+};
 
-const postRecords: PostRecord[] = [
-  { id: "p1", title: "关于评教截止时间的提醒", liked: 12, postedAt: "2026-02-26 09:15" },
-  { id: "p2", title: "推荐一门高质量选修课", liked: 26, postedAt: "2026-02-20 21:40" },
-  { id: "p3", title: "一周课程反馈总结", liked: 8, postedAt: "2026-02-18 12:05" },
-  { id: "p4", title: "关于课堂互动的建议", liked: 14, postedAt: "2026-02-15 18:30" },
-];
-
-const likedRecords: LikedRecord[] = [
-  { id: "l1", title: "高数老师讲课节奏建议", author: "小王", likedAt: "2026-03-02 20:16" },
-  { id: "l2", title: "英语课口语练习心得", author: "小李", likedAt: "2026-03-01 09:42" },
-  { id: "l3", title: "机基实验课答疑合集", author: "小陈", likedAt: "2026-02-27 14:08" },
-  { id: "l4", title: "体育课考核标准说明", author: "小赵", likedAt: "2026-02-25 16:50" },
-];
-
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 5;
 
 const isValidTab = (tab: string | null): tab is UserRecordTab =>
-  tab === "view" || tab === "review" || tab === "post" || tab === "liked";
+  tab === "view" ||
+  tab === "review" ||
+  tab === "post" ||
+  tab === "comment" ||
+  tab === "liked" ||
+  tab === "following" ||
+  tab === "followers";
 
 export default function UserInfo() {
   const user = useAuthStore((state) => state.user);
   const searchParams = useSearchParams();
+  const [profileData, setProfileData] = React.useState(EMPTY_PROFILE_DATA);
+  const [loading, setLoading] = React.useState(true);
   const tabParam = searchParams.get("tab");
   const activeTab: UserRecordTab = isValidTab(tabParam) ? tabParam : "view";
   const rawPage = Number(searchParams.get("page") ?? "1");
 
+  React.useEffect(() => {
+    const controller = new AbortController();
+
+    void (async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/profile", {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          setProfileData(EMPTY_PROFILE_DATA);
+          return;
+        }
+
+        const data = (await response.json()) as ProfileResponse;
+        setProfileData({
+          browseRecords: data.browseRecords ?? [],
+          reviewRecords: data.reviewRecords ?? [],
+          postRecords: data.postRecords ?? [],
+          commentRecords: data.commentRecords ?? [],
+          likedRecords: data.likedRecords ?? [],
+          followingRecords: data.followingRecords ?? [],
+          followerRecords: data.followerRecords ?? [],
+        });
+      } catch {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setProfileData(EMPTY_PROFILE_DATA);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
   const recordsByTab = {
-    view: browseRecords,
-    review: reviewRecords,
-    post: postRecords,
-    liked: likedRecords,
+    view: profileData.browseRecords,
+    review: profileData.reviewRecords,
+    post: profileData.postRecords,
+    comment: profileData.commentRecords,
+    liked: profileData.likedRecords,
+    following: profileData.followingRecords,
+    followers: profileData.followerRecords,
   };
 
   const activeRecords = recordsByTab[activeTab];
@@ -61,17 +122,27 @@ export default function UserInfo() {
 
   return (
     <div className="px-[10vw] py-8">
-      <div className="flex items-start gap-6">
-        <div className="w-64 shrink-0">
-          <UserInfoCard user={user} />
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <UserInfoCard
+            user={user}
+            followingCount={profileData.followingRecords.length}
+            followerCount={profileData.followerRecords.length}
+          />
         </div>
 
         <div className="flex-1">
           <Card>
             <CardContent className="space-y-4 py-6">
-              <RecordTabs activeTab={activeTab} />
-              <HistoryList tab={activeTab} items={pagedRecords} />
-              <Pagination currentPage={currentPage} totalPages={totalPages} />
+              {loading ? (
+                <div className="py-10 text-center text-sm text-muted-foreground">个人中心数据加载中...</div>
+              ) : (
+                <>
+                  <RecordTabs activeTab={activeTab} />
+                  <HistoryList tab={activeTab} items={pagedRecords} />
+                  <Pagination currentPage={currentPage} totalPages={totalPages} />
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

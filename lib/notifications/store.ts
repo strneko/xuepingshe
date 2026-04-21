@@ -104,9 +104,11 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
         const nextItem: NotificationItem = {
           id: payload.notificationId,
           eventId: payload.eventId,
+          eventType: payload.eventType,
           title: payload.title,
           summary: payload.summary,
           href: payload.href,
+          payload: payload.payload,
           createdAt: payload.createdAt,
           isRead: false,
         };

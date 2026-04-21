@@ -13,6 +13,8 @@ interface UserInfoCardProps {
   hidePoints?: boolean;
   showFollowButton?: boolean;
   showMessageButton?: boolean;
+  followingCount?: number;
+  followerCount?: number;
 }
 
 export default function UserInfoCard({
@@ -21,6 +23,8 @@ export default function UserInfoCard({
   hidePoints = false,
   showFollowButton = false,
   showMessageButton = false,
+  followingCount = 0,
+  followerCount = 0,
 }: UserInfoCardProps) {
   const router = useRouter();
   const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
@@ -54,9 +58,31 @@ export default function UserInfoCard({
         <p className="text-sm font-medium text-foreground">{user?.nickname ?? "未登录"}</p>
         {user ? (
           <>
-            <div className="flex justify-between w-full px-[15%]">
-              <p className="text-xs text-muted-foreground">评价数：{user.reviewCount}</p>
-              <p className="text-xs text-muted-foreground">被点赞数：{user.likedCount}</p>
+            <div className="grid w-full grid-cols-2 gap-2 px-[10%] text-center">
+              <div>
+                <p className="text-sm font-medium">
+                  {user.reviewCount}
+                  <span className="ml-1 text-[10px] font-normal text-muted-foreground">评价</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">
+                  {user.likedCount}
+                  <span className="ml-1 text-[10px] font-normal text-muted-foreground">被点赞</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">
+                  {followingCount}
+                  <span className="ml-1 text-[10px] font-normal text-muted-foreground">关注</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">
+                  {followerCount}
+                  <span className="ml-1 text-[10px] font-normal text-muted-foreground">粉丝</span>
+                </p>
+              </div>
             </div>
             {!hidePoints ? <p className="text-xs text-muted-foreground">积分: {user.points}</p> : null}
             {showFollowButton ? (

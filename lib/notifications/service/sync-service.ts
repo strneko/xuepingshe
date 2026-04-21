@@ -15,9 +15,11 @@ export async function syncNotifications(input: {
     items: sliced.map((row) => ({
       id: row.notification.id,
       eventId: row.eventId.toString(),
+      eventType: row.notification.eventType,
       title: row.notification.title,
       summary: row.notification.summary,
       href: row.notification.href ?? undefined,
+      payload: (row.notification.payload as Record<string, unknown> | null) ?? undefined,
       createdAt: row.notification.createdAt.toISOString(),
       isRead: row.isRead,
     })),

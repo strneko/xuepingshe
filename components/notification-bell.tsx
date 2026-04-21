@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Bell } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,23 +13,11 @@ const PREVIEW_LIMIT = 5;
 export default function NotificationBell() {
   const items = useNotificationStore((state) => state.items);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
-  const initialize = useNotificationStore((state) => state.initialize);
-  const connectStream = useNotificationStore((state) => state.connectStream);
-  const disconnectStream = useNotificationStore((state) => state.disconnectStream);
 
   const previewNotifications = useMemo(
     () => [...items].sort((a, b) => Number(b.eventId) - Number(a.eventId)).slice(0, PREVIEW_LIMIT),
     [items],
   );
-
-  useEffect(() => {
-    void initialize(50);
-    connectStream();
-
-    return () => {
-      disconnectStream();
-    };
-  }, [connectStream, disconnectStream, initialize]);
 
   const unreadLabel = unreadCount > 99 ? "99+" : `${unreadCount}`;
 

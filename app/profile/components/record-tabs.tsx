@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-export type UserRecordTab = "view" | "review" | "post" | "liked";
+export type UserRecordTab = "view" | "review" | "post" | "comment" | "liked" | "following" | "followers";
 
 interface RecordTabsProps {
   activeTab: UserRecordTab;
@@ -11,9 +11,12 @@ interface RecordTabsProps {
 
 const TAB_OPTIONS: { key: UserRecordTab; label: string }[] = [
   { key: "view", label: "浏览记录" },
-  { key: "review", label: "评价记录" },
-  { key: "post", label: "发帖记录" },
-  { key: "liked", label: "点赞记录" },
+  { key: "review", label: "我的评价" },
+  { key: "post", label: "我的发帖" },
+  { key: "comment", label: "我的评论" },
+  { key: "liked", label: "我的点赞" },
+  { key: "following", label: "我的关注" },
+  { key: "followers", label: "我的粉丝" },
 ];
 
 export default function RecordTabs({ activeTab }: RecordTabsProps) {
