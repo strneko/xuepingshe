@@ -30,6 +30,7 @@ model User {
   communityComments  CommunityPostComment[]
   uploadSessions     ResourceUploadSession[]
   uploadedResources  CourseResource[]
+  enrollments        Enrollment[]
   userNotifications  UserNotification[]
 }
 

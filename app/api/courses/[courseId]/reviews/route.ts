@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCourseReviewsPage } from "../../../../course/[courseId]/_data/get-course-detail";
+import { getSessionUserId } from "@/lib/auth/session";
 
 const DEMO_USER_ID = "demo-user";
 
@@ -61,12 +62,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const detailedScores = Array.isArray(detailedScoresValue) ? detailedScoresValue : null;
   const detailedScoresJson = detailedScores ?? undefined;
 
-  await ensureDemoUser();
+  const sessionUserId = getSessionUserId(request.headers);
+  const submitterUserId = sessionUserId ?? DEMO_USER_ID;
+
+  if (!sessionUserId) {
+    await ensureDemoUser();
+  }
 
   const review = await prisma.courseReview.create({
     data: {
       courseId,
-      userId: DEMO_USER_ID,
+      userId: submitterUserId,
       nickname,
       avatarUrl,
       overallScore,
