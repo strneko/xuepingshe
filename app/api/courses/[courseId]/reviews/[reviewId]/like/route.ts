@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-const DEMO_USER_ID = "demo-user";
+import { getSessionUserId } from "@/lib/auth/session";
 
 interface RouteContext {
   params: Promise<{
@@ -10,25 +9,13 @@ interface RouteContext {
   }>;
 }
 
-async function ensureDemoUser() {
-  await prisma.user.upsert({
-    where: { id: DEMO_USER_ID },
-    update: {
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-    create: {
-      id: DEMO_USER_ID,
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-  });
-}
-
-export async function POST(_request: NextRequest, context: RouteContext) {
+export async function POST(request: NextRequest, context: RouteContext) {
   const { courseId, reviewId } = await context.params;
+  const userId = getSessionUserId(request.headers);
 
-  await ensureDemoUser();
+  if (!userId) {
+    return NextResponse.json({ message: "请先登录后再点赞" }, { status: 401 });
+  }
 
   const review = await prisma.courseReview.findFirst({
     where: {
@@ -49,7 +36,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     where: {
       reviewId_userId: {
         reviewId,
-        userId: DEMO_USER_ID,
+        userId,
       },
     },
     select: {
@@ -84,7 +71,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     await tx.courseReviewLike.create({
       data: {
         reviewId,
-        userId: DEMO_USER_ID,
+        userId,
       },
     });
 

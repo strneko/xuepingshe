@@ -5,9 +5,10 @@ import { deletePartsByUploadId, listUploadedParts } from "../repositories/upload
 import { findSessionByUploadId, updateSession } from "../repositories/upload-session-repo";
 import { getStorageDriver } from "../storage";
 import { HASH_TYPE_SHA256 } from "../constants";
-import { buildFinalStorageKey, ensureDemoUser } from "./shared";
+import { buildFinalStorageKey } from "./shared";
 
 export async function completeUploadSession(input: {
+  userId: string;
   uploadId: string;
   uploadedPartsMeta: Array<{ partNumber: number; chunkHash: string }>;
 }) {
@@ -58,7 +59,6 @@ export async function completeUploadSession(input: {
   await updateSession(input.uploadId, { status: "MERGING" });
 
   try {
-    const userId = await ensureDemoUser();
     const resource = await createCourseResource({
       courseId: session.courseId,
       fileName: session.fileName,
@@ -71,7 +71,7 @@ export async function completeUploadSession(input: {
       status: "ACTIVE",
       uploader: {
         connect: {
-          id: userId,
+          id: input.userId,
         },
       },
     });

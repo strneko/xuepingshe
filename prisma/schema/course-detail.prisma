@@ -12,6 +12,42 @@ enum CourseReviewStatus {
   PENDING
 }
 
+model CourseProfile {
+  courseId    String   @id
+  courseName  String
+  teacherName String
+  intro       String
+  location    String
+  schedule    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([teacherName])
+  @@index([updatedAt])
+}
+
+enum CourseAnnouncementStatus {
+  PUBLISHED
+  OFFLINE
+}
+
+model CourseAnnouncement {
+  id         String                   @id @default(cuid())
+  courseId   String
+  authorId   String?
+  title      String
+  content    String
+  status     CourseAnnouncementStatus @default(PUBLISHED)
+  publishAt  DateTime                 @default(now())
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([courseId, status, publishAt])
+  @@index([authorId, createdAt])
+}
+
 model CourseReview {
   id               String   @id @default(cuid())
   courseId         String

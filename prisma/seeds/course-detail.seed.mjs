@@ -1,7 +1,83 @@
 export async function seedCourseDetail(prisma) {
   await seedDemoUser(prisma);
+  await seedCourseProfiles(prisma);
+  await seedCourseAnnouncements(prisma);
   await seedCourseReviews(prisma);
   await seedCourseScoreHistory(prisma);
+}
+
+async function seedCourseProfiles(prisma) {
+  const rows = [
+    {
+      courseId: "1",
+      courseName: "高等数学",
+      teacherName: "张教授",
+      intro: "本课程聚焦极限、导数、积分与微分方程，帮助学生建立严谨的数学建模思维。",
+      location: "A-101",
+      schedule: "周一 08:00",
+    },
+  ];
+
+  for (const row of rows) {
+    await prisma.courseProfile.upsert({
+      where: { courseId: row.courseId },
+      update: {
+        courseName: row.courseName,
+        teacherName: row.teacherName,
+        intro: row.intro,
+        location: row.location,
+        schedule: row.schedule,
+      },
+      create: row,
+    });
+  }
+}
+
+async function seedCourseAnnouncements(prisma) {
+  const rows = [
+    {
+      id: "course-1-ann-1",
+      courseId: "1",
+      authorId: "demo-user",
+      title: "第 5 周作业已发布",
+      content: "请于本周日 22:00 前提交，题目覆盖导数应用与不定积分。",
+      status: "PUBLISHED",
+      publishAt: new Date("2026-03-01T10:00:00.000Z"),
+    },
+    {
+      id: "course-1-ann-2",
+      courseId: "1",
+      authorId: "demo-user",
+      title: "课堂测验安排",
+      content: "下周一课程开始前进行 15 分钟随堂测验，范围为上两章重点内容。",
+      status: "PUBLISHED",
+      publishAt: new Date("2026-02-27T10:00:00.000Z"),
+    },
+    {
+      id: "course-1-ann-3",
+      courseId: "1",
+      authorId: "demo-user",
+      title: "助教答疑时段更新",
+      content: "本周答疑调整至周三 19:00，地点为线上会议室。",
+      status: "PUBLISHED",
+      publishAt: new Date("2026-02-24T10:00:00.000Z"),
+    },
+  ];
+
+  for (const row of rows) {
+    await prisma.courseAnnouncement.upsert({
+      where: { id: row.id },
+      update: {
+        courseId: row.courseId,
+        authorId: row.authorId,
+        title: row.title,
+        content: row.content,
+        status: row.status,
+        publishAt: row.publishAt,
+      },
+      create: row,
+    });
+  }
 }
 
 async function seedDemoUser(prisma) {

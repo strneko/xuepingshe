@@ -2,19 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseLimit } from "@/lib/community/shared";
 
-const DEFAULT_TOPICS = [
-  "课程体验",
-  "学习方法",
-  "校园生活",
-  "考试攻略",
-  "选课建议",
-  "社团活动",
-  "宿舍日常",
-  "保研经验",
-  "实习分享",
-  "资源整理",
-];
-
 export async function GET(request: NextRequest) {
   try {
     const keyword = (request.nextUrl.searchParams.get("keyword") ?? "").trim();
@@ -78,18 +65,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const fallback = keyword
-      ? DEFAULT_TOPICS.filter((topic) => topic.includes(keyword)).slice(0, take)
-      : DEFAULT_TOPICS.slice(0, take);
-
-    return NextResponse.json({
-      items: fallback.map((name, index) => ({
-        id: `local-${name}`,
-        name,
-        postCount: 0,
-        followerCount: Math.max(1, take - index),
-      })),
-    });
+    return NextResponse.json({ items: [] });
   } catch (error) {
     const message = error instanceof Error ? error.message : "获取话题失败";
     return NextResponse.json({ message }, { status: 400 });

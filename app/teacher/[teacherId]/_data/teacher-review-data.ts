@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getTeacherSource } from "./teacher-profile-data";
 
 const DEFAULT_REVIEW_PAGE_SIZE = 10;
-const DEMO_USER_ID = "demo-user";
 
 function normalizeReviewLimit(limit?: number) {
   if (!limit || Number.isNaN(limit)) {
@@ -76,14 +75,14 @@ function mapTeacherReviewRowToItem(row: {
   };
 }
 
-async function getLikedReviewIdSet(reviewIds: string[]) {
-  if (reviewIds.length === 0) {
+async function getLikedReviewIdSet(reviewIds: string[], userId?: string | null) {
+  if (reviewIds.length === 0 || !userId) {
     return new Set<string>();
   }
 
   const rows = await prisma.teacherReviewLike.findMany({
     where: {
-      userId: DEMO_USER_ID,
+      userId,
       reviewId: {
         in: reviewIds,
       },
@@ -115,6 +114,7 @@ export async function getTeacherReviewsPage(
   teacherId: string,
   cursor: string | null,
   limit?: number,
+  currentUserId?: string | null,
 ): Promise<ReviewPageResult> {
   await new Promise((resolve) => setTimeout(resolve, 120));
 
@@ -143,7 +143,10 @@ export async function getTeacherReviewsPage(
     return getReviewPageFromList([], cursor, limit);
   }
 
-  const likedReviewIds = await getLikedReviewIdSet(rows.map((row) => row.id));
+  const likedReviewIds = await getLikedReviewIdSet(
+    rows.map((row) => row.id),
+    currentUserId,
+  );
   const items = rows.map((row) =>
     mapTeacherReviewRowToItem({
       ...row,
@@ -156,7 +159,7 @@ export async function getTeacherReviewsPage(
   return getReviewPageFromList(items, cursor, limit);
 }
 
-export async function getTeacherTopReviews(teacherId: string): Promise<ReviewItem[]> {
+export async function getTeacherTopReviews(teacherId: string, currentUserId?: string | null): Promise<ReviewItem[]> {
   await new Promise((resolve) => setTimeout(resolve, 120));
 
   const detail = await getTeacherSource(teacherId);
@@ -185,7 +188,10 @@ export async function getTeacherTopReviews(teacherId: string): Promise<ReviewIte
     return [];
   }
 
-  const likedReviewIds = await getLikedReviewIdSet(rows.map((row) => row.id));
+  const likedReviewIds = await getLikedReviewIdSet(
+    rows.map((row) => row.id),
+    currentUserId,
+  );
 
   return rows.map((row) =>
     mapTeacherReviewRowToItem({

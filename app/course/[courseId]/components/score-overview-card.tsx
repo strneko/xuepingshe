@@ -1,4 +1,4 @@
-import { CircleSlash2, Star } from "lucide-react";
+import { CircleSlash2, Star, StarHalf } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DimensionScore } from "../_types";
@@ -38,6 +38,8 @@ function ScoreChip({ score }: { score: number | null }) {
 }
 
 export default function ScoreOverviewCard({ overallScore, dimensions }: ScoreOverviewCardProps) {
+  const clampedScore = Math.min(5, Math.max(0, overallScore));
+
   return (
     <Card>
       <CardHeader>
@@ -48,9 +50,16 @@ export default function ScoreOverviewCard({ overallScore, dimensions }: ScoreOve
           <p className="text-xs text-muted-foreground">综合评分</p>
           <div className="mt-1 flex items-center justify-between">
             <div className="flex items-center gap-1 text-amber-500">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="size-4 fill-current" />
-              ))}
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isFull = clampedScore >= star;
+                const isHalf = !isFull && clampedScore >= star - 0.5;
+
+                if (isHalf) {
+                  return <StarHalf key={star} className="size-4 fill-current" />;
+                }
+
+                return <Star key={star} className={`size-4 ${isFull ? "fill-current" : "text-muted-foreground/35"}`} />;
+              })}
             </div>
             <span className={`rounded px-2 py-0.5 text-2xl font-bold tabular-nums ${getScoreTagClass(overallScore)}`}>
               {overallScore.toFixed(2)}

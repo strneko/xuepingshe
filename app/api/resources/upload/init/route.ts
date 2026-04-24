@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initUploadSession } from "@/lib/upload/service/upload-session-service";
 import { toErrorResponse } from "@/lib/upload/errors";
+import { getSessionUserId } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = getSessionUserId(request.headers);
+    if (!userId) {
+      return NextResponse.json({ message: "请先登录后再上传资源" }, { status: 401 });
+    }
+
     const body = (await request.json()) as {
       courseId?: string;
       fileName?: string;
@@ -15,6 +21,7 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await initUploadSession({
+      userId,
       courseId: String(body.courseId ?? ""),
       fileName: String(body.fileName ?? ""),
       fileSize: Number(body.fileSize ?? 0),

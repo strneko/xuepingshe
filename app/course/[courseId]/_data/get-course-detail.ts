@@ -3,6 +3,8 @@ import { getCourseSource } from "./course-detail-source";
 import { getCourseReviewsPage, getCourseTopReviews } from "./course-review-data";
 import { getCourseScoreHistoryPage } from "./course-history-data";
 import { listResourcesByCourseId } from "@/lib/upload/repositories/course-resource-repo";
+import { headers } from "next/headers";
+import { getSessionUserId } from "@/lib/auth/session";
 
 const DEFAULT_REVIEW_PAGE_SIZE = 10;
 
@@ -37,14 +39,15 @@ async function getCourseResources(courseId: string): Promise<ResourceItem[]> {
 export async function getCourseDetail(courseId: string): Promise<CourseDetailData> {
   await new Promise((resolve) => setTimeout(resolve, 120));
 
-  const detail = getCourseSource(courseId);
+  const userId = getSessionUserId(await headers());
+  const detail = await getCourseSource(courseId);
   const resources = await getCourseResources(courseId);
 
   return {
     ...detail,
     resources,
-    initialReviews: await getCourseReviewsPage(courseId, null, DEFAULT_REVIEW_PAGE_SIZE),
-    topReviews: await getCourseTopReviews(courseId),
+    initialReviews: await getCourseReviewsPage(courseId, null, DEFAULT_REVIEW_PAGE_SIZE, userId),
+    topReviews: await getCourseTopReviews(courseId, userId),
   };
 }
 

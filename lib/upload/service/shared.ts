@@ -1,7 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import { prisma } from "@/lib/prisma";
-import { DEMO_USER_ID, DEFAULT_MAX_CHUNKS, DEFAULT_MAX_FILE_SIZE, DEFAULT_UPLOAD_EXPIRES_HOURS } from "../constants";
+import { DEFAULT_MAX_CHUNKS, DEFAULT_MAX_FILE_SIZE, DEFAULT_UPLOAD_EXPIRES_HOURS } from "../constants";
 import { UploadError } from "../errors";
 
 export interface InitUploadInput {
@@ -61,21 +60,4 @@ export function getExpiresAt(now = new Date()) {
   const next = new Date(now);
   next.setHours(next.getHours() + DEFAULT_UPLOAD_EXPIRES_HOURS);
   return next;
-}
-
-export async function ensureDemoUser() {
-  await prisma.user.upsert({
-    where: { id: DEMO_USER_ID },
-    update: {
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-    create: {
-      id: DEMO_USER_ID,
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-  });
-
-  return DEMO_USER_ID;
 }

@@ -3,25 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getCourseReviewsPage } from "../../../../course/[courseId]/_data/get-course-detail";
 import { getSessionUserId } from "@/lib/auth/session";
 
-const DEMO_USER_ID = "demo-user";
-
 function normalizeString(value: unknown, fallback = "") {
   return typeof value === "string" ? value.trim() : fallback;
-}
-
-async function ensureDemoUser() {
-  await prisma.user.upsert({
-    where: { id: DEMO_USER_ID },
-    update: {
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-    create: {
-      id: DEMO_USER_ID,
-      email: "demo-user@xuepingshe.local",
-      name: "Demo User",
-    },
-  });
 }
 
 interface RouteContext {
@@ -35,8 +18,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const cursor = request.nextUrl.searchParams.get("cursor");
   const limitParam = request.nextUrl.searchParams.get("limit");
   const parsedLimit = limitParam ? Number(limitParam) : undefined;
+  const currentUserId = getSessionUserId(request.headers);
 
-  const result = await getCourseReviewsPage(courseId, cursor, Number.isFinite(parsedLimit) ? parsedLimit : undefined);
+  const result = await getCourseReviewsPage(
+    courseId,
+    cursor,
+    Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+    currentUserId,
+  );
 
   return NextResponse.json(result);
 }
@@ -63,16 +52,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const detailedScoresJson = detailedScores ?? undefined;
 
   const sessionUserId = getSessionUserId(request.headers);
-  const submitterUserId = sessionUserId ?? DEMO_USER_ID;
-
   if (!sessionUserId) {
-    await ensureDemoUser();
+    return NextResponse.json({ message: "请先登录后再提交评价" }, { status: 401 });
   }
 
   const review = await prisma.courseReview.create({
     data: {
       courseId,
-      userId: submitterUserId,
+      userId: sessionUserId,
       nickname,
       avatarUrl,
       overallScore,

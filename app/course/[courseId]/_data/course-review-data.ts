@@ -1,9 +1,7 @@
 import { ReviewItem, ReviewPageResult, ReviewScoreItem } from "../_types";
 import { prisma } from "@/lib/prisma";
-import { getCourseSource } from "./course-detail-source";
 
 const DEFAULT_REVIEW_PAGE_SIZE = 10;
-const DEMO_USER_ID = "demo-user";
 
 function normalizeLimit(limit?: number) {
   if (!limit || Number.isNaN(limit)) {
@@ -62,14 +60,14 @@ function mapCourseReviewRowToItem(row: {
   };
 }
 
-async function getLikedReviewIdSet(reviewIds: string[]) {
-  if (reviewIds.length === 0) {
+async function getLikedReviewIdSet(reviewIds: string[], userId?: string | null) {
+  if (reviewIds.length === 0 || !userId) {
     return new Set<string>();
   }
 
   const rows = await prisma.courseReviewLike.findMany({
     where: {
-      userId: DEMO_USER_ID,
+      userId,
       reviewId: {
         in: reviewIds,
       },
@@ -101,6 +99,7 @@ export async function getCourseReviewsPage(
   courseId: string,
   cursor: string | null,
   limit?: number,
+  currentUserId?: string | null,
 ): Promise<ReviewPageResult> {
   const rows = await prisma.courseReview.findMany({
     where: {
@@ -123,12 +122,15 @@ export async function getCourseReviewsPage(
     return getReviewPageFromList([], cursor, limit);
   }
 
-  const likedReviewIds = await getLikedReviewIdSet(rows.map((row) => row.id));
+  const likedReviewIds = await getLikedReviewIdSet(
+    rows.map((row) => row.id),
+    currentUserId,
+  );
   const items = rows.map((row) => mapCourseReviewRowToItem({ ...row, liked: likedReviewIds.has(row.id) }));
   return getReviewPageFromList(items, cursor, limit);
 }
 
-export async function getCourseTopReviews(courseId: string): Promise<ReviewItem[]> {
+export async function getCourseTopReviews(courseId: string, currentUserId?: string | null): Promise<ReviewItem[]> {
   const rows = await prisma.courseReview.findMany({
     where: {
       courseId,
@@ -151,13 +153,10 @@ export async function getCourseTopReviews(courseId: string): Promise<ReviewItem[
     return [];
   }
 
-  const detail = getCourseSource(courseId);
-  const likedReviewIds = await getLikedReviewIdSet(rows.map((row) => row.id));
+  const likedReviewIds = await getLikedReviewIdSet(
+    rows.map((row) => row.id),
+    currentUserId,
+  );
 
-  return rows.map((row) => ({
-    ...mapCourseReviewRowToItem({ ...row, liked: likedReviewIds.has(row.id) }),
-    sourceCourseId: detail.courseId,
-    sourceCourseName: detail.courseName,
-    sourceTeacherName: detail.teacher,
-  }));
+  return rows.map((row) => mapCourseReviewRowToItem({ ...row, liked: likedReviewIds.has(row.id) }));
 }

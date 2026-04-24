@@ -5,18 +5,15 @@ import { findInstantResource, findResourceById } from "../repositories/course-re
 import { listUploadedPartNumbers } from "../repositories/upload-part-repo";
 import { createSession, findReusableSession } from "../repositories/upload-session-repo";
 import { getStorageDriver } from "../storage";
-import {
-  assertInitInput,
-  buildTempObjectPrefix,
-  createUploadId,
-  ensureDemoUser,
-  getExpiresAt,
-  InitUploadInput,
-} from "./shared";
+import { assertInitInput, buildTempObjectPrefix, createUploadId, getExpiresAt, InitUploadInput } from "./shared";
 
-export async function initUploadSession(input: InitUploadInput) {
+interface InitUploadSessionInput extends InitUploadInput {
+  userId: string;
+}
+
+export async function initUploadSession(input: InitUploadSessionInput) {
   assertInitInput(input);
-  const userId = await ensureDemoUser();
+  const userId = input.userId;
 
   const dedupe = await findInstantResource({
     hashType: HASH_TYPE_SHA256,

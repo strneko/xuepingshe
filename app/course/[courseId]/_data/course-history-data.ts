@@ -171,7 +171,12 @@ export async function getCourseScoreHistoryPage(
   });
 
   if (rows.length === 0) {
-    return getHistoryPageFromList(buildHistorySource(courseId, granularity), cursor, limit);
+    return {
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+      total: 0,
+    };
   }
 
   const source: HistoryScoreItem[] = rows.map((row) => ({
