@@ -8,6 +8,7 @@ export async function buildUserProfile(userId: string): Promise<UserProfile | nu
     select: {
       id: true,
       name: true,
+      points: true,
       _count: {
         select: {
           courseReviews: true,
@@ -37,6 +38,6 @@ export async function buildUserProfile(userId: string): Promise<UserProfile | nu
     avatarUrl: "",
     reviewCount: (user._count.courseReviews ?? 0) + (user._count.teacherReviews ?? 0),
     likedCount: likedSummary._sum.likeCount ?? 0,
-    points: 0,
+    points: user.points,
   };
 }

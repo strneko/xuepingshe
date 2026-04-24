@@ -1,0 +1,41 @@
+enum ShopRedeemStatus {
+  SUCCESS
+  CANCELED
+}
+
+model ShopProduct {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  needPoints Int
+  coverText  String?
+  stock      Int?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  redeemOrders ShopRedeemOrder[]
+
+  @@index([isActive, needPoints])
+}
+
+model ShopRedeemOrder {
+  id                  String           @id @default(cuid())
+  userId              String
+  productId           String
+  productSnapshotName String
+  pointsSpent         Int
+  receiverName        String
+  receiverPhone       String
+  receiverAddress     String
+  remark              String?
+  status              ShopRedeemStatus @default(SUCCESS)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product ShopProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([productId, createdAt])
+}
