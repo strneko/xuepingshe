@@ -1,40 +1,12 @@
-import { CircleSlash2, Star, StarHalf } from "lucide-react";
+import { Star, StarHalf } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import ScoreBox from "@/components/score-box";
 import { DimensionScore } from "../_types";
 
 interface ScoreOverviewCardProps {
   overallScore: number;
   dimensions: DimensionScore[];
-}
-
-function getScoreTagClass(score: number | null) {
-  if (score === null) {
-    return "bg-muted text-muted-foreground";
-  }
-  if (score < 3) {
-    return "bg-red-50 text-red-600";
-  }
-  if (score < 4) {
-    return "bg-yellow-50 text-yellow-700";
-  }
-  return "bg-green-50 text-green-700";
-}
-
-function ScoreChip({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-        <CircleSlash2 className="size-3.5" />
-      </span>
-    );
-  }
-
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium tabular-nums ${getScoreTagClass(score)}`}>
-      {score.toFixed(1)}
-    </span>
-  );
 }
 
 export default function ScoreOverviewCard({ overallScore, dimensions }: ScoreOverviewCardProps) {
@@ -61,9 +33,7 @@ export default function ScoreOverviewCard({ overallScore, dimensions }: ScoreOve
                 return <Star key={star} className={`size-4 ${isFull ? "fill-current" : "text-muted-foreground/35"}`} />;
               })}
             </div>
-            <span className={`rounded px-2 py-0.5 text-2xl font-bold tabular-nums ${getScoreTagClass(overallScore)}`}>
-              {overallScore.toFixed(2)}
-            </span>
+            <ScoreBox score={overallScore} digits={2} className="px-2 py-0.5 text-2xl font-bold" />
           </div>
         </div>
 
@@ -73,7 +43,7 @@ export default function ScoreOverviewCard({ overallScore, dimensions }: ScoreOve
             <div key={item.key}>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{item.label}</span>
-                <ScoreChip score={item.score} />
+                <ScoreBox score={item.score} digits={1} />
               </div>
               {index < dimensions.length - 1 && <Separator className="mt-2" />}
             </div>

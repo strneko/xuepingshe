@@ -1,7 +1,8 @@
-import { CircleSlash2, Info, ThumbsUp } from "lucide-react";
+import { Info, ThumbsUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import ScoreBox from "@/components/score-box";
 import { ReviewItem } from "@/app/course/[courseId]/_types";
 import { cn } from "@/lib/utils";
 
@@ -17,42 +18,13 @@ interface ReviewDetailedCardProps {
   className?: string;
 }
 
-function getScoreTagClass(score: number | null) {
-  if (score === null) {
-    return "bg-muted text-muted-foreground";
-  }
-  if (score < 3) {
-    return "bg-red-50 text-red-600";
-  }
-  if (score < 4) {
-    return "bg-yellow-50 text-yellow-700";
-  }
-  return "bg-green-50 text-green-700";
-}
-
-function ScoreChip({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-        <CircleSlash2 className="size-3.5" />
-      </span>
-    );
-  }
-
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium tabular-nums ${getScoreTagClass(score)}`}>
-      {score.toFixed(1)}
-    </span>
-  );
-}
-
 function ScoreWithWeight({ score, weight }: { score: number | null; weight?: number }) {
   const normalizedWeight = weight ?? 1;
   const shouldShowWeight = score !== null && normalizedWeight > 0;
 
   return (
     <span className="inline-flex items-center gap-1">
-      <ScoreChip score={score} />
+      <ScoreBox score={score} digits={1} />
       {shouldShowWeight && (
         <span className="w-4 text-center text-[10px] text-muted-foreground tabular-nums">x{normalizedWeight}</span>
       )}
@@ -102,7 +74,7 @@ export default function ReviewDetailedCard({
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             综合评分
-            <ScoreChip score={review.overallScore} />
+            <ScoreBox score={review.overallScore} digits={1} />
           </span>
           <Button
             type="button"

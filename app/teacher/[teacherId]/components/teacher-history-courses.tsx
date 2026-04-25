@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CircleSlash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import ScoreBox from "@/components/score-box";
 import { HistoryScoreItem, HistoryScorePageResult, ScoreHistoryGranularity } from "../../../course/[courseId]/_types";
 import TeacherCoursesList from "./teacher-courses-list";
 
@@ -39,42 +39,13 @@ const COLUMNS: { key: keyof HistoryScoreItem; label: string }[] = [
   { key: "improve", label: "教学创新与改进" },
 ];
 
-function getScoreTagClass(score: number | null) {
-  if (score === null) {
-    return "bg-muted text-muted-foreground";
-  }
-  if (score < 3) {
-    return "bg-red-50 text-red-600";
-  }
-  if (score < 4) {
-    return "bg-yellow-50 text-yellow-700";
-  }
-  return "bg-green-50 text-green-700";
-}
-
-function ScoreChip({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-        <CircleSlash2 className="size-3.5" />
-      </span>
-    );
-  }
-
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium tabular-nums ${getScoreTagClass(score)}`}>
-      {score.toFixed(2)}
-    </span>
-  );
-}
-
 export default function TeacherHistoryCourses({ teacherId, initialHistoryScores }: TeacherHistoryCoursesProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const rawView = searchParams.get("tab");
-  const view: ViewType = rawView === "courses" ? "courses" : "history";
+  const view: ViewType = rawView === "history" ? "history" : "courses";
 
   const rawGranularity = searchParams.get("granularity");
   const granularity: ScoreHistoryGranularity =
@@ -262,28 +233,28 @@ export default function TeacherHistoryCourses({ teacherId, initialHistoryScores 
                       <tr key={item.id} className="border-b last:border-b-0">
                         <td className="py-2 text-center text-muted-foreground whitespace-nowrap">{item.timeLabel}</td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.overallScore} />
+                          <ScoreBox score={item.overallScore} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.attitude} />
+                          <ScoreBox score={item.attitude} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.content} />
+                          <ScoreBox score={item.content} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.method} />
+                          <ScoreBox score={item.method} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.effect} />
+                          <ScoreBox score={item.effect} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.interaction} />
+                          <ScoreBox score={item.interaction} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.resource} />
+                          <ScoreBox score={item.resource} digits={2} />
                         </td>
                         <td className="py-2 text-center">
-                          <ScoreChip score={item.improve} />
+                          <ScoreBox score={item.improve} digits={2} />
                         </td>
                       </tr>
                     ))}

@@ -2,7 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getScoreTagClass } from "@/lib/score-tag";
+import ScoreBox from "@/components/score-box";
 
 export type SearchResultCardType = "course" | "teacher";
 
@@ -71,11 +71,7 @@ export default function SearchResultCard({
             <p>{highlightText(department, keyword)}</p>
             {typeof score === "number" && typeof reviewCount === "number" && (
               <p>
-                综合评分{" "}
-                <span className={`rounded px-1.5 py-0.5 text-xs font-medium tabular-nums ${getScoreTagClass(score)}`}>
-                  {score.toFixed(1)}
-                </span>{" "}
-                · 评价 {reviewCount}
+                综合评分 <ScoreBox score={score} digits={1} className="align-middle" /> · 评价 {reviewCount}
               </p>
             )}
             {snippet && <p className="line-clamp-2">{highlightText(snippet, keyword)}</p>}

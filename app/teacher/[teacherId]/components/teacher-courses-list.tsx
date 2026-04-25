@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import ScoreBox from "@/components/score-box";
 
 interface TeacherCourseItem {
   courseId: string;
@@ -84,7 +85,7 @@ export default function TeacherCoursesList({ teacherId }: TeacherCoursesListProp
       >
         <span className="font-medium">{item.courseName}</span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{item.score === null ? "暂无评分" : `${item.score.toFixed(1)} 分`}</span>
+          <ScoreBox score={item.score} digits={1} />
           <span>{item.reviewCount} 条评价</span>
         </span>
       </Link>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CircleSlash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import ScoreBox from "@/components/score-box";
 import { HistoryScoreItem, HistoryScorePageResult, ScoreHistoryGranularity } from "../_types";
 
 interface HistoryScoreListProps {
@@ -17,35 +17,6 @@ const GRANULARITY_OPTIONS: { key: ScoreHistoryGranularity; label: string }[] = [
   { key: "month", label: "月" },
   { key: "day", label: "日" },
 ];
-
-function getScoreTagClass(score: number | null) {
-  if (score === null) {
-    return "bg-muted text-muted-foreground";
-  }
-  if (score < 3) {
-    return "bg-red-50 text-red-600";
-  }
-  if (score < 4) {
-    return "bg-yellow-50 text-yellow-700";
-  }
-  return "bg-green-50 text-green-700";
-}
-
-function ScoreChip({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-        <CircleSlash2 className="size-3.5" />
-      </span>
-    );
-  }
-
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium tabular-nums text-center ${getScoreTagClass(score)}`}>
-      {score.toFixed(2)}
-    </span>
-  );
-}
 
 const COLUMNS: { key: keyof HistoryScoreItem; label: string }[] = [
   { key: "timeLabel", label: "时间" },
@@ -232,28 +203,28 @@ export default function HistoryScoreList({ courseId }: HistoryScoreListProps) {
                   <tr key={item.id} className="border-b last:border-b-0">
                     <td className=" py-2 text-muted-foreground whitespace-nowrap text-center">{item.timeLabel}</td>
                     <td className=" py-2 text-center">
-                      <ScoreChip score={item.overallScore} />
+                      <ScoreBox score={item.overallScore} digits={2} />
                     </td>
                     <td className=" py-2 text-center">
-                      <ScoreChip score={item.attitude} />
+                      <ScoreBox score={item.attitude} digits={2} />
                     </td>
                     <td className="py-2 text-center">
-                      <ScoreChip score={item.content} />
+                      <ScoreBox score={item.content} digits={2} />
                     </td>
                     <td className=" py-2 text-center">
-                      <ScoreChip score={item.method} />
+                      <ScoreBox score={item.method} digits={2} />
                     </td>
                     <td className=" py-2 text-center">
-                      <ScoreChip score={item.effect} />
+                      <ScoreBox score={item.effect} digits={2} />
                     </td>
                     <td className=" py-2 text-center">
-                      <ScoreChip score={item.interaction} />
+                      <ScoreBox score={item.interaction} digits={2} />
                     </td>
                     <td className="py-2 text-center">
-                      <ScoreChip score={item.resource} />
+                      <ScoreBox score={item.resource} digits={2} />
                     </td>
                     <td className="py-2 text-center">
-                      <ScoreChip score={item.improve} />
+                      <ScoreBox score={item.improve} digits={2} />
                     </td>
                   </tr>
                 ))}

@@ -1,5 +1,6 @@
-import { CircleSlash2, ThumbsUp } from "lucide-react";
+import { ThumbsUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ScoreBox from "@/components/score-box";
 import { ReviewItem } from "@/app/course/[courseId]/_types";
 import { cn } from "@/lib/utils";
 
@@ -10,35 +11,6 @@ interface ReviewBriefCardProps {
   fallbackCourseName?: string;
   fallbackTeacherName?: string;
   className?: string;
-}
-
-function getScoreTagClass(score: number | null) {
-  if (score === null) {
-    return "bg-muted text-muted-foreground";
-  }
-  if (score < 3) {
-    return "bg-red-50 text-red-600";
-  }
-  if (score < 4) {
-    return "bg-yellow-50 text-yellow-700";
-  }
-  return "bg-green-50 text-green-700";
-}
-
-function ScoreChip({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-        <CircleSlash2 className="size-3.5" />
-      </span>
-    );
-  }
-
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium tabular-nums ${getScoreTagClass(score)}`}>
-      {score.toFixed(1)}
-    </span>
-  );
 }
 
 export default function ReviewBriefCard({
@@ -74,7 +46,7 @@ export default function ReviewBriefCard({
       </div>
       <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
         综合评分：
-        <ScoreChip score={review.overallScore} />
+        <ScoreBox score={review.overallScore} digits={1} />
       </p>
       <p className="text-sm text-muted-foreground">{review.summary}</p>
     </div>

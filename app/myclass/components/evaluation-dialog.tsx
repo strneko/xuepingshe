@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
+import ScoreBox from "@/components/score-box";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -187,10 +188,6 @@ function weightedAverage(items: Array<{ score: number; weight: number }>): Score
   return Number((weightedSum / totalWeight).toFixed(2));
 }
 
-function scoreLabel(score: Score) {
-  return score === null ? "---" : score.toFixed(2);
-}
-
 function isWeightOutOfRange(weight: number) {
   return weight < 0 || weight > 100;
 }
@@ -352,9 +349,11 @@ export default function EvaluationDialog({
                         }
                       }}
                     />
-                    <span className="inline-block w-12 text-right text-xl font-bold tabular-nums text-amber-500">
-                      {scoreLabel(overallScore)}
-                    </span>
+                    <ScoreBox
+                      score={overallScore}
+                      digits={2}
+                      className="inline-flex min-w-16 justify-end text-xl font-bold"
+                    />
                   </div>
                 </CardTitle>
               </div>
@@ -462,9 +461,7 @@ export default function EvaluationDialog({
                                   }))
                                 }
                               />
-                              <span className="inline-block w-12 text-right text-sm tabular-nums text-muted-foreground">
-                                {scoreLabel(currentScore)}
-                              </span>
+                              <ScoreBox score={currentScore} digits={2} className="inline-flex min-w-16 justify-end" />
                             </div>
                           </div>
                           {!category.expanded &&
