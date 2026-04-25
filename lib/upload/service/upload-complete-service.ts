@@ -6,6 +6,7 @@ import { findSessionByUploadId, updateSession } from "../repositories/upload-ses
 import { getStorageDriver } from "../storage";
 import { HASH_TYPE_SHA256 } from "../constants";
 import { buildFinalStorageKey } from "./shared";
+import { enqueueCourseResourceUploadedNotification } from "@/lib/course/notifications";
 
 export async function completeUploadSession(input: {
   userId: string;
@@ -123,6 +124,17 @@ export async function completeUploadSession(input: {
     });
 
     await getStorageDriver().deletePrefix(session.tempObjectPrefix);
+
+    try {
+      await enqueueCourseResourceUploadedNotification({
+        courseId: session.courseId,
+        resourceId: resource.id,
+        resourceName: session.fileName,
+        actorId: input.userId,
+      });
+    } catch (notificationError) {
+      void notificationError;
+    }
 
     return {
       accepted: true,

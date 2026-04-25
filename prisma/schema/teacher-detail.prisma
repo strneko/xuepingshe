@@ -18,6 +18,25 @@ model TeacherProfile {
   recentSevenScoresJson Json
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  courses            TeacherCourse[]
+}
+
+model TeacherCourse {
+  id          String   @id @default(cuid())
+  teacherId   String
+  courseId    String
+  courseName  String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher TeacherProfile @relation(fields: [teacherId], references: [teacherId], onDelete: Cascade)
+
+  @@unique([teacherId, courseId])
+  @@index([teacherId, isActive, sortOrder])
+  @@index([courseId, isActive])
 }
 
 model TeacherReview {

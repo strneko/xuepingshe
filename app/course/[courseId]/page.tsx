@@ -22,6 +22,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         <section className="space-y-4">
           <CourseHero
             title={detail.courseName}
+            teacherId={detail.teacherId ?? null}
             teacher={detail.teacher}
             intro={detail.intro}
             location={detail.location}

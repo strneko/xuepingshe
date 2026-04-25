@@ -167,6 +167,7 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
   async markRead(notificationId: string) {
     const response = await fetch("/api/notifications/read", {
       method: "POST",
+      keepalive: true,
       headers: {
         "Content-Type": "application/json",
       },

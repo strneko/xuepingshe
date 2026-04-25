@@ -133,6 +133,16 @@ export async function getCourseSource(courseId: string): Promise<CourseDetailRec
     }),
   ]);
 
+  const resolvedTeacherName = courseProfile?.teacherName?.trim() || parseTeacherName(courseDoc?.subtitle);
+  const teacherProfile = await prisma.teacherProfile.findFirst({
+    where: {
+      teacherName: resolvedTeacherName,
+    },
+    select: {
+      teacherId: true,
+    },
+  });
+
   const recentOverallScore = normalizeScore(
     latestHistory?.overallScore ?? reviewAggregate._avg.overallScore ?? courseDoc?.scoreSnapshot,
   );
@@ -140,7 +150,8 @@ export async function getCourseSource(courseId: string): Promise<CourseDetailRec
   return {
     courseId,
     courseName: courseProfile?.courseName?.trim() || courseDoc?.title?.trim() || `课程 ${courseId}`,
-    teacher: courseProfile?.teacherName?.trim() || parseTeacherName(courseDoc?.subtitle),
+    teacherId: teacherProfile?.teacherId ?? null,
+    teacher: resolvedTeacherName,
     intro: courseProfile?.intro?.trim() || courseDoc?.snippet?.trim() || "暂无课程简介",
     location: courseProfile?.location?.trim() || "待补充",
     time: courseProfile?.schedule?.trim() || "待补充",

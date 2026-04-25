@@ -16,8 +16,8 @@ interface TeacherHistoryCoursesProps {
 type ViewType = "history" | "courses";
 
 const VIEW_OPTIONS: { key: ViewType; label: string }[] = [
-  { key: "history", label: "历史评分" },
   { key: "courses", label: "教授课程" },
+  { key: "history", label: "历史评分" },
 ];
 
 const GRANULARITY_OPTIONS: { key: ScoreHistoryGranularity; label: string }[] = [
@@ -305,7 +305,7 @@ export default function TeacherHistoryCourses({ teacherId, initialHistoryScores 
           {!error && footerText && <p className="text-center text-xs text-muted-foreground">{footerText}</p>}
         </>
       ) : (
-        <TeacherCoursesList />
+        <TeacherCoursesList teacherId={teacherId} />
       )}
     </section>
   );

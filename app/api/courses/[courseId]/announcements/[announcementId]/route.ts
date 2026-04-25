@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth/session";
+import { enqueueCourseAnnouncementUpdatedNotification } from "@/lib/course/notifications";
 
 interface RouteContext {
   params: Promise<{
@@ -63,7 +64,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     },
     select: {
       id: true,
+      title: true,
       content: true,
+      status: true,
       publishAt: true,
     },
   });
@@ -73,6 +76,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const publishAt = existing.content === content ? existing.publishAt : new Date();
+  const hasChanged = existing.title !== title || existing.content !== content || existing.status !== status;
 
   const updated = await prisma.courseAnnouncement.update({
     where: {
@@ -93,6 +97,20 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updatedAt: true,
     },
   });
+
+  if (hasChanged && updated.status === "PUBLISHED") {
+    try {
+      await enqueueCourseAnnouncementUpdatedNotification({
+        courseId,
+        announcementId: updated.id,
+        announcementTitle: updated.title,
+        actorId: userId,
+        updatedAtIso: updated.updatedAt.toISOString(),
+      });
+    } catch (notificationError) {
+      void notificationError;
+    }
+  }
 
   return NextResponse.json({
     id: updated.id,

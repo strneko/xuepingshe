@@ -74,6 +74,7 @@ export interface HistoryScorePageResult {
 export interface CourseDetailData {
   courseId: string;
   courseName: string;
+  teacherId?: string | null;
   teacher: string;
   intro: string;
   location: string;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth/session";
+import { enqueueCourseAnnouncementPublishedNotification } from "@/lib/course/notifications";
 
 interface RouteContext {
   params: Promise<{
@@ -127,6 +128,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
       updatedAt: true,
     },
   });
+
+  if (created.status === "PUBLISHED") {
+    try {
+      await enqueueCourseAnnouncementPublishedNotification({
+        courseId,
+        announcementId: created.id,
+        announcementTitle: created.title,
+        actorId: userId,
+      });
+    } catch (notificationError) {
+      void notificationError;
+    }
+  }
 
   return NextResponse.json({
     id: created.id,

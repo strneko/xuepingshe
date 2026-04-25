@@ -1,8 +1,52 @@
 export async function seedTeacherDetail(prisma) {
   await seedTeacherProfile(prisma);
+  await seedTeacherCourses(prisma);
   await seedDemoUser(prisma);
   await seedTeacherReviews(prisma);
   await seedTeacherScoreHistory(prisma);
+}
+
+async function seedTeacherCourses(prisma) {
+  const rows = [
+    {
+      teacherId: "1",
+      courseId: "1",
+      courseName: "高等数学",
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      teacherId: "1",
+      courseId: "2",
+      courseName: "线性代数",
+      sortOrder: 2,
+      isActive: true,
+    },
+    {
+      teacherId: "1",
+      courseId: "3",
+      courseName: "概率论与数理统计",
+      sortOrder: 3,
+      isActive: true,
+    },
+  ];
+
+  for (const row of rows) {
+    await prisma.teacherCourse.upsert({
+      where: {
+        teacherId_courseId: {
+          teacherId: row.teacherId,
+          courseId: row.courseId,
+        },
+      },
+      update: {
+        courseName: row.courseName,
+        sortOrder: row.sortOrder,
+        isActive: row.isActive,
+      },
+      create: row,
+    });
+  }
 }
 
 async function seedTeacherProfile(prisma) {
