@@ -5,6 +5,9 @@ import CourseReviewSection from "./components/course-review-section";
 import ScoreOverviewCard from "./components/score-overview-card";
 import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
 import { getCourseDetail } from "./_data/get-course-detail";
+import { headers } from "next/headers";
+import { getSessionUserId } from "@/lib/auth/session";
+import { recordBrowseHistory } from "@/lib/profile/browse-history";
 
 interface CourseDetailPageProps {
   params: Promise<{
@@ -15,6 +18,17 @@ interface CourseDetailPageProps {
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
   const { courseId } = await params;
   const detail = await getCourseDetail(courseId);
+  const userId = getSessionUserId(await headers());
+
+  if (userId) {
+    await recordBrowseHistory({
+      userId,
+      kind: "COURSE",
+      targetId: detail.courseId,
+      title: detail.courseName,
+      href: `/course/${detail.courseId}`,
+    });
+  }
 
   return (
     <main className="mx-auto w-full max-w-350 px-4 py-6 md:px-6">

@@ -2,7 +2,6 @@
 import * as React from "react";
 import { ReviewCarousel } from "./review-carousel";
 import { ReviewItem } from "../course/[courseId]/_types";
-import { Button } from "@/components/ui/button";
 
 export default function Recommendations() {
   const [reviews, setReviews] = React.useState<ReviewItem[]>([]);
@@ -66,11 +65,6 @@ export default function Recommendations() {
 
   return (
     <div className="flex h-[calc(40vh-64px)] gap-20 justify-between ">
-      <div className="absolute right-6 mt-4">
-        <Button onClick={() => void handleRefresh()} disabled={isRefreshing || isReviewLoading}>
-          {isRefreshing ? "刷新中..." : "刷新推荐"}
-        </Button>
-      </div>
       {isReviewLoading ? (
         <div className="rounded-md border p-4 text-sm text-muted-foreground">热门评价加载中...</div>
       ) : (

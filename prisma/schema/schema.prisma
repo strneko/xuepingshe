@@ -35,6 +35,7 @@ model User {
   enrollments        Enrollment[]
   shopRedeemOrders   ShopRedeemOrder[]
   userNotifications  UserNotification[]
+  browseHistories    BrowseHistory[]
 }
 
 model Post {

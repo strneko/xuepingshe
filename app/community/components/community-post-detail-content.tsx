@@ -40,6 +40,11 @@ export default function CommunityPostDetailContent({
   liking = false,
   commentInputRef,
 }: CommunityPostDetailContentProps) {
+  const isEdited = post.updatedAt !== post.createdAt;
+  const timeText = isEdited
+    ? `编辑于 ${formatRelativeTime(post.updatedAt)}`
+    : `发布于 ${formatRelativeTime(post.createdAt)}`;
+
   return (
     <article className="space-y-0">
       {!hideHeader ? (
@@ -51,7 +56,7 @@ export default function CommunityPostDetailContent({
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">{post.author.nickname}</p>
-              <p className="text-xs text-muted-foreground">发布于 {formatRelativeTime(post.createdAt)}</p>
+              <p className="text-xs text-muted-foreground">{timeText}</p>
             </div>
 
             <Button asChild variant="outline" size="sm">
@@ -72,6 +77,7 @@ export default function CommunityPostDetailContent({
       <section className={cn("space-y-4 border-b px-6", hideHeader ? "pb-5" : "py-5")}>
         <div className="space-y-2">
           <h1 className="text-xl font-semibold tracking-tight text-foreground">{post.title}</h1>
+          {hideHeader ? <p className="text-xs text-muted-foreground">{timeText}</p> : null}
         </div>
 
         <div className="rounded-2xl border bg-muted/20 p-5 text-sm leading-7 text-foreground/90">{post.content}</div>

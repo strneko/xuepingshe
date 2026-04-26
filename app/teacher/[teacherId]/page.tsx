@@ -4,6 +4,9 @@ import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
 import { getTeacherDetail } from "./_data/get-teacher-detail";
 import TeacherHero from "./components/teacher-hero";
 import TeacherHistoryCourses from "./components/teacher-history-courses";
+import { headers } from "next/headers";
+import { getSessionUserId } from "@/lib/auth/session";
+import { recordBrowseHistory } from "@/lib/profile/browse-history";
 
 interface TeacherDetailPageProps {
   params: Promise<{
@@ -14,6 +17,17 @@ interface TeacherDetailPageProps {
 export default async function TeacherDetailPage({ params }: TeacherDetailPageProps) {
   const { teacherId } = await params;
   const detail = await getTeacherDetail(teacherId);
+  const userId = getSessionUserId(await headers());
+
+  if (userId) {
+    await recordBrowseHistory({
+      userId,
+      kind: "TEACHER",
+      targetId: detail.teacherId,
+      title: detail.teacherName,
+      href: `/teacher/${detail.teacherId}`,
+    });
+  }
 
   return (
     <main className="mx-auto w-full max-w-350 px-4 py-6 md:px-6">

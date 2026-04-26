@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveOptionalCurrentUserId, stripHtml } from "@/lib/community/shared";
 import type { UserProfile } from "@/lib/stores/auth-store";
 import CommunityPostDetailShell from "../components/community-post-detail-shell";
+import { recordBrowseHistory } from "@/lib/profile/browse-history";
 
 type PageProps = {
   params: Promise<{ postId: string }>;
@@ -24,8 +25,10 @@ export default async function CommunityPostPage({ params }: PageProps) {
       select: {
         id: true,
         title: true,
+        authorId: true,
         contentHtml: true,
         createdAt: true,
+        updatedAt: true,
         lastReplyAt: true,
         likeCount: true,
         commentCount: true,
@@ -93,24 +96,76 @@ export default async function CommunityPostPage({ params }: PageProps) {
     notFound();
   }
 
-  const likedSummary = await prisma.communityPost.aggregate({
-    where: {
-      authorId: post.author.id,
-      status: "PUBLISHED",
-    },
-    _sum: {
-      likeCount: true,
-    },
-  });
+  if (userId) {
+    await recordBrowseHistory({
+      userId,
+      kind: "COMMUNITY_POST",
+      targetId: post.id,
+      title: post.title,
+      href: `/community/${post.id}`,
+    });
+  }
+
+  const [likedSummary, followingLikes, followerLikes] = await Promise.all([
+    prisma.communityPost.aggregate({
+      where: {
+        authorId: post.author.id,
+        status: "PUBLISHED",
+      },
+      _sum: {
+        likeCount: true,
+      },
+    }),
+    prisma.communityPostLike.findMany({
+      where: {
+        userId: post.author.id,
+        post: {
+          status: "PUBLISHED",
+        },
+      },
+      select: {
+        post: {
+          select: {
+            authorId: true,
+          },
+        },
+      },
+      take: 1000,
+    }),
+    prisma.communityPostLike.findMany({
+      where: {
+        post: {
+          authorId: post.author.id,
+          status: "PUBLISHED",
+        },
+      },
+      select: {
+        userId: true,
+      },
+      take: 2000,
+    }),
+  ]);
+
+  const followingCount = new Set(
+    followingLikes.map((item) => item.post.authorId).filter((authorId) => authorId && authorId !== post.author.id),
+  ).size;
+  const followerCount = new Set(
+    followerLikes
+      .map((item) => item.userId)
+      .filter((followerUserId) => followerUserId && followerUserId !== post.author.id),
+  ).size;
 
   const normalizedPost = {
     id: post.id,
     title: post.title,
+    authorId: post.author.id,
+    contentHtml: post.contentHtml,
     author: {
       nickname: post.author.name ?? "匿名同学",
       avatarUrl: "",
     },
     createdAt: post.createdAt.toISOString(),
+    updatedAt: post.updatedAt.toISOString(),
     lastReplyAt: post.lastReplyAt?.toISOString(),
     content: stripHtml(post.contentHtml),
     images: [],
@@ -145,6 +200,8 @@ export default async function CommunityPostPage({ params }: PageProps) {
           },
         }))}
         authorProfile={authorProfile}
+        followingCount={followingCount}
+        followerCount={followerCount}
       />
     </main>
   );

@@ -1,25 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth/session";
+import { BrowseHistoryEntry, listBrowseHistory } from "@/lib/profile/browse-history";
 
 type BrowseRecord = {
   id: string;
-  courseName: string;
+  title: string;
+  href: string;
+  kind: "COURSE" | "TEACHER" | "COMMUNITY_POST";
   visitedAt: string;
 };
 
 type ReviewRecord = {
   id: string;
+  reviewType: "COURSE" | "TEACHER";
   courseName: string;
+  teacherName?: string;
   score: string;
   reviewedAt: string;
+  href: string;
 };
 
 type PostRecord = {
   id: string;
   title: string;
   liked: number;
+  commentCount: number;
   postedAt: string;
+  href: string;
 };
 
 type CommentRecord = {
@@ -27,6 +35,7 @@ type CommentRecord = {
   title: string;
   content: string;
   commentAt: string;
+  href: string;
 };
 
 type LikedRecord = {
@@ -34,6 +43,7 @@ type LikedRecord = {
   title: string;
   author: string;
   likedAt: string;
+  href: string;
 };
 
 type FollowRecord = {
@@ -48,6 +58,60 @@ type FollowerRecord = {
   name: string;
   introduction: string;
   followedAt: string;
+};
+
+type CourseReviewRow = {
+  id: string;
+  courseId: string;
+  overallScore: number | null;
+  createdAt: Date;
+};
+
+type TeacherReviewRow = {
+  id: string;
+  teacherId: string;
+  sourceCourseName: string | null;
+  overallScore: number | null;
+  createdAt: Date;
+};
+
+type PostRow = {
+  id: string;
+  title: string;
+  likeCount: number;
+  commentCount: number;
+  createdAt: Date;
+};
+
+type CommentRow = {
+  id: string;
+  postId: string;
+  content: string;
+  createdAt: Date;
+  post: {
+    title: string;
+  };
+};
+
+type LikeRow = {
+  id: string;
+  createdAt: Date;
+  post: {
+    id: string;
+    title: string;
+    author: {
+      id: string;
+      name: string | null;
+    };
+  };
+};
+
+type FollowerLikeRow = {
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+  };
 };
 
 function formatDate(value: Date) {
@@ -66,8 +130,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "未登录" }, { status: 401 });
     }
 
-    const [courseReviews, teacherReviews, posts, comments, likes, recentNotifications, followerLikeRows] =
-      await Promise.all([
+    const [courseReviews, teacherReviews, posts, comments, likes, browseHistoryRows, followerLikeRows] =
+      (await Promise.all([
         prisma.courseReview.findMany({
           where: { userId, status: "VISIBLE" },
           select: {
@@ -97,6 +161,7 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             likeCount: true,
+            commentCount: true,
             createdAt: true,
           },
           orderBy: { createdAt: "desc" },
@@ -106,6 +171,7 @@ export async function GET(request: NextRequest) {
           where: { authorId: userId, status: "VISIBLE" },
           select: {
             id: true,
+            postId: true,
             content: true,
             createdAt: true,
             post: {
@@ -129,6 +195,7 @@ export async function GET(request: NextRequest) {
             createdAt: true,
             post: {
               select: {
+                id: true,
                 title: true,
                 author: {
                   select: {
@@ -142,20 +209,7 @@ export async function GET(request: NextRequest) {
           orderBy: { createdAt: "desc" },
           take: 100,
         }),
-        prisma.userNotification.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            createdAt: true,
-            notification: {
-              select: {
-                title: true,
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 100,
-        }),
+        listBrowseHistory(userId, 100),
         prisma.communityPostLike.findMany({
           where: {
             post: {
@@ -175,50 +229,101 @@ export async function GET(request: NextRequest) {
           orderBy: { createdAt: "desc" },
           take: 500,
         }),
-      ]);
+      ])) as [
+        CourseReviewRow[],
+        TeacherReviewRow[],
+        PostRow[],
+        CommentRow[],
+        LikeRow[],
+        BrowseHistoryEntry[],
+        FollowerLikeRow[],
+      ];
 
-    const browseRecords: BrowseRecord[] = recentNotifications.map((item) => ({
+    const [courseProfiles, teacherProfiles] = await Promise.all([
+      prisma.courseProfile.findMany({
+        where: {
+          courseId: {
+            in: Array.from(new Set(courseReviews.map((item) => item.courseId))),
+          },
+        },
+        select: {
+          courseId: true,
+          courseName: true,
+          teacherName: true,
+        },
+      }),
+      prisma.teacherProfile.findMany({
+        where: {
+          teacherId: {
+            in: Array.from(new Set(teacherReviews.map((item) => item.teacherId))),
+          },
+        },
+        select: {
+          teacherId: true,
+          teacherName: true,
+        },
+      }),
+    ]);
+
+    const courseMetaMap = new Map(
+      courseProfiles.map((item) => [item.courseId, { courseName: item.courseName, teacherName: item.teacherName }]),
+    );
+    const teacherNameMap = new Map(teacherProfiles.map((item) => [item.teacherId, item.teacherName]));
+
+    const browseRecords: BrowseRecord[] = browseHistoryRows.map((item) => ({
       id: item.id,
-      courseName: item.notification.title,
-      visitedAt: formatDate(item.createdAt),
+      title: item.title,
+      href: item.href,
+      kind: item.kind,
+      visitedAt: formatDate(item.visitedAt),
     }));
 
     const reviewRecords: ReviewRecord[] = [
-      ...courseReviews.map((item) => ({
+      ...courseReviews.map((item: CourseReviewRow) => ({
         id: `course-${item.id}`,
-        courseName: `课程 ${item.courseId}`,
+        reviewType: "COURSE" as const,
+        courseName: courseMetaMap.get(item.courseId)?.courseName ?? `课程 ${item.courseId}`,
+        teacherName: courseMetaMap.get(item.courseId)?.teacherName,
         score: item.overallScore !== null ? item.overallScore.toFixed(1) : "-",
         reviewedAt: formatDate(item.createdAt),
+        href: `/course/${item.courseId}?tab=history`,
       })),
-      ...teacherReviews.map((item) => ({
+      ...teacherReviews.map((item: TeacherReviewRow) => ({
         id: `teacher-${item.id}`,
-        courseName: item.sourceCourseName?.trim() || `教师 ${item.teacherId}`,
+        reviewType: "TEACHER" as const,
+        courseName: item.sourceCourseName?.trim() || "教师评价",
+        teacherName: teacherNameMap.get(item.teacherId) ?? `教师 ${item.teacherId}`,
         score: item.overallScore !== null ? item.overallScore.toFixed(1) : "-",
         reviewedAt: formatDate(item.createdAt),
+        href: `/teacher/${item.teacherId}?tab=history`,
       })),
     ]
       .sort((left, right) => (left.reviewedAt < right.reviewedAt ? 1 : -1))
       .slice(0, 200);
 
-    const postRecords: PostRecord[] = posts.map((item) => ({
+    const postRecords: PostRecord[] = posts.map((item: PostRow) => ({
       id: item.id,
       title: item.title,
       liked: item.likeCount,
+      commentCount: item.commentCount,
       postedAt: formatDate(item.createdAt),
+      href: `/community/${item.id}`,
     }));
 
-    const commentRecords: CommentRecord[] = comments.map((item) => ({
+    const commentRecords: CommentRecord[] = comments.map((item: CommentRow) => ({
       id: item.id,
       title: item.post.title,
       content: item.content,
       commentAt: formatDate(item.createdAt),
+      href: `/community/${item.postId}`,
     }));
 
-    const likedRecords: LikedRecord[] = likes.map((item) => ({
+    const likedRecords: LikedRecord[] = likes.map((item: LikeRow) => ({
       id: item.id,
       title: item.post.title,
       author: item.post.author.name?.trim() || "匿名用户",
       likedAt: formatDate(item.createdAt),
+      href: `/community/${item.post.id}`,
     }));
 
     const followingMap = new Map<
@@ -231,7 +336,7 @@ export async function GET(request: NextRequest) {
       }
     >();
 
-    likes.forEach((item) => {
+    likes.forEach((item: LikeRow) => {
       const authorId = item.post.author.id;
       const authorName = item.post.author.name?.trim();
       if (!authorName) {
@@ -262,7 +367,7 @@ export async function GET(request: NextRequest) {
       }
     >();
 
-    followerLikeRows.forEach((item) => {
+    followerLikeRows.forEach((item: FollowerLikeRow) => {
       const followerId = item.user.id;
       const followerName = item.user.name?.trim() || "匿名用户";
       const existing = followerMap.get(followerId);

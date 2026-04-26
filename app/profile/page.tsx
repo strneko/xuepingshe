@@ -133,7 +133,7 @@ export default function UserInfo() {
 
         <div className="flex-1">
           <Card>
-            <CardContent className="space-y-4 py-6">
+            <CardContent className="space-y-4 pb-6 pt-0">
               {loading ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">个人中心数据加载中...</div>
               ) : (

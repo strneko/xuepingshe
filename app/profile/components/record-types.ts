@@ -2,22 +2,29 @@ import { UserRecordTab } from "./record-tabs";
 
 export interface BrowseRecord {
   id: string;
-  courseName: string;
+  title: string;
+  href: string;
+  kind: "COURSE" | "TEACHER" | "COMMUNITY_POST";
   visitedAt: string;
 }
 
 export interface ReviewRecord {
   id: string;
+  reviewType: "COURSE" | "TEACHER";
   courseName: string;
+  teacherName?: string;
   score: string;
   reviewedAt: string;
+  href: string;
 }
 
 export interface PostRecord {
   id: string;
   title: string;
   liked: number;
+  commentCount: number;
   postedAt: string;
+  href: string;
 }
 
 export interface CommentRecord {
@@ -25,6 +32,7 @@ export interface CommentRecord {
   title: string;
   content: string;
   commentAt: string;
+  href: string;
 }
 
 export interface LikedRecord {
@@ -32,6 +40,7 @@ export interface LikedRecord {
   title: string;
   author: string;
   likedAt: string;
+  href: string;
 }
 
 export interface FollowRecord {

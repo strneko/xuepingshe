@@ -166,9 +166,29 @@ export default function CommunityPage() {
     [toggleLike],
   );
 
-  const handleOpenPost = useCallback((postId: string) => {
-    setSelectedPostId(postId);
-  }, []);
+  const handleOpenPost = useCallback(
+    (postId: string) => {
+      const targetPost = posts.find((post) => post.id === postId);
+      if (targetPost) {
+        void fetch("/api/profile/browse-history", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            kind: "COMMUNITY_POST",
+            targetId: targetPost.id,
+            title: targetPost.title,
+            href: `/community/${targetPost.id}`,
+          }),
+          keepalive: true,
+        });
+      }
+
+      setSelectedPostId(postId);
+    },
+    [posts],
+  );
 
   const handlePostUpdate = useCallback((nextPost: CommunityPost) => {
     setPosts((current) => current.map((post) => (post.id === nextPost.id ? nextPost : post)));

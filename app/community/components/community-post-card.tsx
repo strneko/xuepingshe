@@ -17,6 +17,10 @@ export default function CommunityPostCard({ post, liking = false, onToggleLike, 
   const handleOpenPost = () => {
     onOpenPost?.(post.id);
   };
+  const isEdited = post.updatedAt !== post.createdAt;
+  const timeText = isEdited
+    ? `编辑于 ${formatRelativeTime(post.updatedAt)}`
+    : `发布于 ${formatRelativeTime(post.createdAt)}`;
 
   return (
     <article
@@ -38,7 +42,7 @@ export default function CommunityPostCard({ post, liking = false, onToggleLike, 
         </Avatar>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{post.author.nickname}</p>
-          <p className="text-xs text-muted-foreground">{formatRelativeTime(post.createdAt)}</p>
+          <p className="text-xs text-muted-foreground">{timeText}</p>
         </div>
       </header>
 

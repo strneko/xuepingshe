@@ -38,8 +38,10 @@ function normalizeTopicNames(value: unknown) {
 function toPostListItem(post: {
   id: string;
   title: string;
+  authorId: string;
   contentHtml: string;
   createdAt: Date;
+  updatedAt: Date;
   lastReplyAt: Date | null;
   likeCount: number;
   commentCount: number;
@@ -51,11 +53,14 @@ function toPostListItem(post: {
   return {
     id: post.id,
     title: post.title,
+    authorId: post.authorId,
+    contentHtml: post.contentHtml,
     author: {
       nickname: post.author.name ?? "匿名同学",
       avatarUrl: "",
     },
     createdAt: post.createdAt.toISOString(),
+    updatedAt: post.updatedAt.toISOString(),
     lastReplyAt: post.lastReplyAt?.toISOString(),
     content: stripHtml(post.contentHtml),
     images: [],
@@ -95,8 +100,10 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           title: true,
+          authorId: true,
           contentHtml: true,
           createdAt: true,
+          updatedAt: true,
           lastReplyAt: true,
           likeCount: true,
           commentCount: true,
@@ -216,8 +223,10 @@ export async function POST(request: NextRequest) {
         select: {
           id: true,
           title: true,
+          authorId: true,
           contentHtml: true,
           createdAt: true,
+          updatedAt: true,
           lastReplyAt: true,
           likeCount: true,
           commentCount: true,
