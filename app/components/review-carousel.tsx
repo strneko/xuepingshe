@@ -11,6 +11,8 @@ interface MyCardCarouselProps {
   className?: string;
   reviews: ReviewItem[];
   variant?: "brief" | "detailed";
+  disabledReviewId?: string | null;
+  onLikeReview?: (review: ReviewItem) => void;
   itemClassName?: string;
   contentClassName?: string;
   showSourceCourse?: boolean;
@@ -23,6 +25,8 @@ export function ReviewCarousel({
   className,
   reviews,
   variant = "detailed",
+  disabledReviewId,
+  onLikeReview,
   itemClassName,
   contentClassName,
   showSourceCourse = true,
@@ -57,6 +61,9 @@ export function ReviewCarousel({
                 {variant === "detailed" ? (
                   <ReviewDetailedCard
                     review={review}
+                    liked={Boolean(review.liked)}
+                    disabled={disabledReviewId === review.id}
+                    onLike={onLikeReview}
                     showSourceCourse={showSourceCourse}
                     showSourceTeacher={showSourceTeacher}
                   />

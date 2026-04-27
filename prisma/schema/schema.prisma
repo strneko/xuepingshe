@@ -26,6 +26,7 @@ model User {
   courseReviewLikes  CourseReviewLike[]
   teacherReviews     TeacherReview[]
   teacherReviewLikes TeacherReviewLike[]
+  recommendedReviewLikes RecommendedReviewLike[]
   communityPosts     CommunityPost[]
   communityDrafts    CommunityDraft[]
   communityPostLikes CommunityPostLike[]

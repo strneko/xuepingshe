@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Recommended Reviews Rebuild
+
+This project supports both scheduled rebuild and manual fallback rebuild for homepage recommended reviews.
+
+- Scheduled task (Vercel Cron): `GET /api/cron/reviews/recommended-rebuild`
+- Manual fallback: `POST /api/reviews/recommended/rebuild`
+
+Environment variables:
+
+- `CRON_SECRET`: token used by the cron endpoint via `Authorization: Bearer <CRON_SECRET>`
+- `RECOMMENDATION_REBUILD_TOKEN`: token used by the manual rebuild endpoint via header `x-recommendation-rebuild-token`
+
+If `CRON_SECRET` is not set, the cron endpoint falls back to `RECOMMENDATION_REBUILD_TOKEN`.

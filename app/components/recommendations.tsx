@@ -2,12 +2,12 @@
 import * as React from "react";
 import { ReviewCarousel } from "./review-carousel";
 import { ReviewItem } from "../course/[courseId]/_types";
+import { useRecommendedReviewLike } from "./hooks/use-recommended-review-like";
 
 export default function Recommendations() {
   const [reviews, setReviews] = React.useState<ReviewItem[]>([]);
   const [isReviewLoading, setIsReviewLoading] = React.useState(true);
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const isRefreshingRef = React.useRef(false);
+  const { likingReviewId, toggleLike } = useRecommendedReviewLike({ setReviews });
 
   const fetchReviews = React.useCallback(async () => {
     const response = await fetch("/api/reviews/recommended", { method: "GET", cache: "no-store" });
@@ -47,22 +47,6 @@ export default function Recommendations() {
     };
   }, [fetchReviews]);
 
-  const handleRefresh = React.useCallback(async () => {
-    if (isRefreshingRef.current) return;
-    isRefreshingRef.current = true;
-    setIsRefreshing(true);
-
-    try {
-      const data = await fetchReviews();
-      setReviews(data);
-    } catch {
-      setReviews([]);
-    } finally {
-      isRefreshingRef.current = false;
-      setIsRefreshing(false);
-    }
-  }, [fetchReviews]);
-
   return (
     <div className="flex h-[calc(40vh-64px)] gap-20 justify-between ">
       {isReviewLoading ? (
@@ -71,6 +55,8 @@ export default function Recommendations() {
         <ReviewCarousel
           reviews={reviews}
           variant="detailed"
+          disabledReviewId={likingReviewId}
+          onLikeReview={(review) => void toggleLike(review)}
           showSourceCourse
           showSourceTeacher
           className="mt-4 h-[calc(50vh-64px)] px-10 py-5"

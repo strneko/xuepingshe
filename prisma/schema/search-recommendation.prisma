@@ -51,8 +51,22 @@ model RecommendedReview {
   rankScore         Float    @default(0)
   isActive          Boolean  @default(true)
   batchKey          String?
+  likes             RecommendedReviewLike[]
 
   @@index([isActive, rankScore])
   @@index([batchKey])
   @@index([createdAt])
+}
+
+model RecommendedReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review RecommendedReview @relation(fields: [reviewId], references: [reviewId], onDelete: Cascade)
+  user   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId, createdAt])
 }

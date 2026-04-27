@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/reviews/recommended-rebuild",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
