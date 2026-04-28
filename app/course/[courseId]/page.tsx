@@ -8,6 +8,8 @@ import { getCourseDetail } from "./_data/get-course-detail";
 import { headers } from "next/headers";
 import { getSessionUserId } from "@/lib/auth/session";
 import { recordBrowseHistory } from "@/lib/profile/browse-history";
+import { prisma } from "@/lib/prisma";
+import CourseManagementCard from "./components/course-management-card";
 
 interface CourseDetailPageProps {
   params: Promise<{
@@ -19,6 +21,33 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   const { courseId } = await params;
   const detail = await getCourseDetail(courseId);
   const userId = getSessionUserId(await headers());
+
+  const currentUser = userId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true, name: true },
+      })
+    : null;
+
+  const teacherName = currentUser?.name?.trim() ?? "";
+  const isCourseTeacher = currentUser?.role === "TEACHER" && teacherName.length > 0;
+  const isStudent = currentUser?.role === "STUDENT";
+
+  const inviteCode = isCourseTeacher
+    ? await prisma.courseInviteCode.findFirst({
+        where: {
+          courseId: detail.courseId,
+          isActive: true,
+          offering: {
+            teacherName,
+          },
+        },
+        orderBy: [{ updatedAt: "desc" }],
+        select: {
+          code: true,
+        },
+      })
+    : null;
 
   if (userId) {
     await recordBrowseHistory({
@@ -41,9 +70,24 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
             intro={detail.intro}
             location={detail.location}
             time={detail.time}
+            rightSlot={
+              isCourseTeacher ? (
+                <CourseManagementCard
+                  courseId={detail.courseId}
+                  inviteCode={inviteCode?.code ?? null}
+                  initialCourseName={detail.courseName}
+                  initialTeacherName={detail.teacher}
+                  initialIntro={detail.intro}
+                  initialLocation={detail.location}
+                  initialSchedule={detail.time}
+                />
+              ) : null
+            }
           />
           <CourseTabs courseId={detail.courseId} announcements={detail.announcements} resources={detail.resources} />
-          <CourseReviewCompose courseId={detail.courseId} courseName={detail.courseName} teacher={detail.teacher} />
+          {isStudent ? (
+            <CourseReviewCompose courseId={detail.courseId} courseName={detail.courseName} teacher={detail.teacher} />
+          ) : null}
           <CourseReviewSection courseId={detail.courseId} initialReviews={detail.initialReviews} />
         </section>
 

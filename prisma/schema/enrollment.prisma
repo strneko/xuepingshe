@@ -1,12 +1,44 @@
+enum UserRole {
+  STUDENT
+  TEACHER
+}
+
 enum EnrollmentStatus {
   ACTIVE
   DROPPED
   COMPLETED
 }
 
+enum CourseOfferingStatus {
+  OPEN
+  CLOSED
+}
+
+model CourseOffering {
+  id             String              @id @default(cuid())
+  courseId       String
+  courseName     String
+  teacherName    String
+  semesterKey    String
+  status         CourseOfferingStatus @default(OPEN)
+  startAt        DateTime?
+  endAt          DateTime?
+  forceClosedAt  DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  enrollments    Enrollment[]
+  inviteCode     CourseInviteCode?
+
+  @@unique([courseId, semesterKey])
+  @@index([courseId, status])
+  @@index([semesterKey, status])
+}
+
 model Enrollment {
   id          String           @id @default(cuid())
   userId      String
+  offeringId  String
   courseId    String
   courseName  String
   teacherName String?
@@ -20,19 +52,27 @@ model Enrollment {
   updatedAt   DateTime         @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offering CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, courseId])
+  @@unique([userId, offeringId])
   @@index([userId, status, createdAt])
+  @@index([offeringId, status])
   @@index([courseId, term])
 }
 
 model CourseInviteCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  courseId  String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String         @id @default(cuid())
+  code        String         @unique
+  courseId    String
+  offeringId  String         @unique
+  semesterKey String
+  isActive    Boolean        @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  offering CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
 
   @@index([courseId, isActive])
+  @@index([semesterKey, isActive])
 }

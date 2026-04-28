@@ -51,7 +51,29 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ message: "请先登录后再更新课程信息" }, { status: 401 });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, name: true },
+  });
+
+  if (!user || user.role !== "TEACHER") {
+    return NextResponse.json({ message: "只有教师可以修改课程信息" }, { status: 403 });
+  }
+
   const { courseId } = await context.params;
+
+  const course = await prisma.courseProfile.findUnique({
+    where: { courseId },
+    select: { teacherName: true },
+  });
+
+  if (!course) {
+    return NextResponse.json({ message: "课程基础信息不存在" }, { status: 404 });
+  }
+
+  if (!user.name?.trim() || user.name.trim() !== course.teacherName.trim()) {
+    return NextResponse.json({ message: "仅本课程授课教师本人可修改课程信息" }, { status: 403 });
+  }
 
   let payload: unknown;
   try {

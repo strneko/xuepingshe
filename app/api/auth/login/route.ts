@@ -12,6 +12,10 @@ function defaultNicknameFromEmail(email: string) {
   return (localPart.trim() || "用户").slice(0, 20);
 }
 
+function normalizeRole(value: unknown) {
+  return value === "TEACHER" || value === "STUDENT" ? value : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     let payload: unknown;
@@ -23,6 +27,7 @@ export async function POST(request: NextRequest) {
 
     const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
     const email = normalizeEmail(body.email);
+    const role = normalizeRole(body.role);
 
     if (!email) {
       return NextResponse.json({ message: "邮箱不能为空" }, { status: 400 });
@@ -34,10 +39,11 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.upsert({
       where: { email },
-      update: {},
+      update: role ? { role } : {},
       create: {
         email,
         name: defaultNicknameFromEmail(email),
+        role: role ?? "STUDENT",
       },
       select: {
         id: true,

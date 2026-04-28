@@ -6,9 +6,14 @@ import { headers } from "next/headers";
 import { getSessionUserId } from "@/lib/auth/session";
 
 export interface CourseCardProps {
+  enrollmentId: string;
+  offeringId: string;
   courseId: string;
   courseName: string;
+  viewerRole?: "STUDENT" | "TEACHER";
   teacher: string;
+  term: string;
+  offeringStatus: "OPEN" | "CLOSED";
   location: string;
   time: string;
   imageUrl: string;
@@ -18,6 +23,9 @@ export interface CourseCardProps {
   // ✨ 新增：允许传递更多详情数据（可选）
   description?: string;
   credits?: string;
+  inviteCode?: string | null;
+  recentScore?: number | null;
+  reviewCount?: number;
 }
 
 interface MyClassPageProps {

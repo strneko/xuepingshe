@@ -4,8 +4,11 @@ export interface UserProfile {
   id: string;
   nickname: string;
   avatarUrl?: string;
+  role: "STUDENT" | "TEACHER";
   reviewCount: number;
   likedCount: number;
+  followingCount: number;
+  followerCount: number;
   points: number;
 }
 

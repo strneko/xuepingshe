@@ -20,11 +20,16 @@ export default function CoursesList({ courses: classes, keyword = "" }: CourseLi
     <div className="py-8 px-[10vw]">
       <div className="overflow-hidden rounded-xl border bg-card">
         {classes.map((course, index) => (
-          <div key={course.courseId}>
+          <div key={course.offeringId}>
             <CourseCard
+              enrollmentId={course.enrollmentId}
+              offeringId={course.offeringId}
               courseId={course.courseId}
               courseName={course.courseName}
+              viewerRole={course.viewerRole}
               teacher={course.teacher}
+              term={course.term}
+              offeringStatus={course.offeringStatus}
               location={course.location}
               time={course.time}
               imageUrl={course.imageUrl}
@@ -32,6 +37,9 @@ export default function CoursesList({ courses: classes, keyword = "" }: CourseLi
               isEvaluated={course.isEvaluated}
               description={course.description}
               credits={course.credits}
+              inviteCode={course.inviteCode}
+              recentScore={course.recentScore}
+              reviewCount={course.reviewCount}
               keyword={keyword}
             />
             {index < classes.length - 1 ? <Separator /> : null}

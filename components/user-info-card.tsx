@@ -13,8 +13,6 @@ interface UserInfoCardProps {
   hidePoints?: boolean;
   showFollowButton?: boolean;
   showMessageButton?: boolean;
-  followingCount?: number;
-  followerCount?: number;
 }
 
 export default function UserInfoCard({
@@ -23,8 +21,6 @@ export default function UserInfoCard({
   hidePoints = false,
   showFollowButton = false,
   showMessageButton = false,
-  followingCount,
-  followerCount,
 }: UserInfoCardProps) {
   const router = useRouter();
   const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
@@ -71,18 +67,18 @@ export default function UserInfoCard({
                   <span className="ml-1 text-[10px] font-normal text-muted-foreground">被点赞</span>
                 </p>
               </div>
-              {typeof followingCount === "number" ? (
+              {typeof user?.followingCount === "number" ? (
                 <div>
                   <p className="text-sm font-medium">
-                    {followingCount}
+                    {user.followingCount}
                     <span className="ml-1 text-[10px] font-normal text-muted-foreground">关注</span>
                   </p>
                 </div>
               ) : null}
-              {typeof followerCount === "number" ? (
+              {typeof user?.followerCount === "number" ? (
                 <div>
                   <p className="text-sm font-medium">
-                    {followerCount}
+                    {user.followerCount}
                     <span className="ml-1 text-[10px] font-normal text-muted-foreground">粉丝</span>
                   </p>
                 </div>

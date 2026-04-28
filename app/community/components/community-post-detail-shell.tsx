@@ -241,15 +241,7 @@ export default function CommunityPostDetailShell({
 
       <aside className="hidden lg:block">
         <div className="sticky top-8">
-          <UserInfoCard
-            user={authorProfile}
-            hideActions
-            hidePoints
-            showFollowButton
-            showMessageButton
-            followingCount={followingCount}
-            followerCount={followerCount}
-          />
+          <UserInfoCard user={authorProfile} hideActions hidePoints showFollowButton showMessageButton />
         </div>
       </aside>
     </div>

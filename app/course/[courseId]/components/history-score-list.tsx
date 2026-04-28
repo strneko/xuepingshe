@@ -184,7 +184,7 @@ export default function HistoryScoreList({ courseId }: HistoryScoreListProps) {
 
       <div className="rounded-md border ">
         <div className="overflow-x-auto">
-          <div ref={containerRef} className="h-90 overflow-y-auto" onScroll={handleScroll}>
+          <div ref={containerRef} className="max-h-90 overflow-y-auto" onScroll={handleScroll}>
             <table className="w-full min-w-245 border-collapse text-xs">
               <thead className="bg-muted/30">
                 <tr>

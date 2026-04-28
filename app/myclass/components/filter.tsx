@@ -5,7 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Search } from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -19,16 +22,23 @@ export default function Filter() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const user = useAuthStore((state) => state.user);
 
   const onlyUnevaluated = searchParams.get("unevaluated") === "true";
   const sort = searchParams.get("sort") === "desc" ? "desc" : "asc";
+  const isTeacher = user?.role === "TEACHER";
   const keywordParam = searchParams.get("keyword") ?? "";
   const [keyword, setKeyword] = useState(keywordParam);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
-  const [joinError, setJoinError] = useState<string | null>(null);
-  const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [createCourseName, setCreateCourseName] = useState("");
+  const [createTeacherName, setCreateTeacherName] = useState("");
+  const [createIntro, setCreateIntro] = useState("");
+  const [createLocation, setCreateLocation] = useState("");
+  const [createSchedule, setCreateSchedule] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     setKeyword(keywordParam);
@@ -56,45 +66,99 @@ export default function Filter() {
 
   const openJoinDialog = () => {
     setInviteCode("");
-    setJoinError(null);
-    setJoinSuccess(null);
     setIsJoinDialogOpen(true);
+  };
+
+  const openCreateDialog = () => {
+    setCreateCourseName("");
+    setCreateTeacherName(user?.nickname?.trim() || "");
+    setCreateIntro("");
+    setCreateLocation("");
+    setCreateSchedule("");
+    setIsCreateDialogOpen(true);
   };
 
   const submitJoin = async () => {
     const normalizedCode = inviteCode.trim().toUpperCase();
     if (!normalizedCode) {
-      setJoinError("请输入邀请码");
+      toast.error("请输入邀请码");
       return;
     }
 
     setIsJoining(true);
-    setJoinError(null);
-    setJoinSuccess(null);
 
     try {
-      const response = await fetch("/api/myclass/enrollments/join", {
+      const response = await fetch("/api/course-invitations/join", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ inviteCode: normalizedCode }),
+        body: JSON.stringify({ code: normalizedCode }),
       });
 
       const payload = (await response.json().catch(() => ({}))) as { message?: string };
 
       if (!response.ok) {
-        setJoinError(payload.message ?? "加入课程失败，请稍后重试");
+        toast.error(payload.message ?? "加入课程失败，请稍后重试");
         return;
       }
 
-      setJoinSuccess(payload.message ?? "加入课程成功");
+      toast.success(payload.message ?? "加入课程成功");
       setInviteCode("");
+      setIsJoinDialogOpen(false);
       router.refresh();
     } catch {
-      setJoinError("网络异常，请稍后重试");
+      toast.error("网络异常，请稍后重试");
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const submitCreate = async () => {
+    const courseName = createCourseName.trim();
+    const teacherName = createTeacherName.trim();
+    const intro = createIntro.trim();
+    const location = createLocation.trim();
+    const schedule = createSchedule.trim();
+
+    if (!courseName || !teacherName || !intro || !location || !schedule) {
+      toast.error("课程名称、教师、简介、地点、时间均为必填");
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          courseName,
+          teacherName,
+          intro,
+          location,
+          schedule,
+        }),
+      });
+
+      const data = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+
+      if (!response.ok) {
+        toast.error(data.message ?? "创建课程失败，请稍后重试");
+        return;
+      }
+
+      toast.success(data.message ?? "课程创建成功");
+      setIsCreateDialogOpen(false);
+      router.refresh();
+    } catch {
+      toast.error("网络异常，请稍后重试");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -116,26 +180,36 @@ export default function Filter() {
         />
       </div>
       <div className="ml-auto flex items-center gap-4">
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <Checkbox
-            checked={onlyUnevaluated}
-            onCheckedChange={(checked) => updateParams({ unevaluated: checked === true ? "true" : null, page: null })}
-          />
-          仅看未评教
-        </label>
+        {isTeacher ? (
+          <Button type="button" size="sm" onClick={openCreateDialog}>
+            创建课程
+          </Button>
+        ) : (
+          <>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <Checkbox
+                checked={onlyUnevaluated}
+                onCheckedChange={(checked) =>
+                  updateParams({ unevaluated: checked === true ? "true" : null, page: null })
+                }
+              />
+              仅看未评教
+            </label>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => updateParams({ sort: sort === "asc" ? "desc" : "asc", page: null })}
-        >
-          截止时间：{sort === "asc" ? "最近" : "最远"}
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => updateParams({ sort: sort === "asc" ? "desc" : "asc", page: null })}
+            >
+              截止时间：{sort === "asc" ? "最近" : "最远"}
+            </Button>
 
-        <Button type="button" size="sm" onClick={openJoinDialog}>
-          加入课程
-        </Button>
+            <Button type="button" size="sm" onClick={openJoinDialog}>
+              加入课程
+            </Button>
+          </>
+        )}
       </div>
 
       <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
@@ -159,8 +233,6 @@ export default function Filter() {
                 }
               }}
             />
-            {joinError ? <p className="text-xs text-destructive">{joinError}</p> : null}
-            {joinSuccess ? <p className="text-xs text-emerald-600">{joinSuccess}</p> : null}
           </div>
 
           <DialogFooter>
@@ -169,6 +241,53 @@ export default function Filter() {
             </Button>
             <Button type="button" onClick={() => void submitJoin()} disabled={isJoining}>
               {isJoining ? "加入中..." : "确认加入"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>创建课程</DialogTitle>
+            <DialogDescription>填写课程基础信息后，系统会自动生成课程ID、学期标识和邀请码。</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Input
+              value={createCourseName}
+              onChange={(event) => setCreateCourseName(event.target.value)}
+              placeholder="课程名称，例如：高等数学A"
+            />
+            <Input
+              value={createTeacherName}
+              onChange={(event) => setCreateTeacherName(event.target.value)}
+              placeholder="授课教师，例如：张老师"
+            />
+            <Textarea
+              value={createIntro}
+              onChange={(event) => setCreateIntro(event.target.value)}
+              placeholder="课程简介"
+              rows={3}
+            />
+            <Input
+              value={createLocation}
+              onChange={(event) => setCreateLocation(event.target.value)}
+              placeholder="上课地点，例如：一教A101"
+            />
+            <Input
+              value={createSchedule}
+              onChange={(event) => setCreateSchedule(event.target.value)}
+              placeholder="上课时间，例如：周三3-4节"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isCreating}>
+              取消
+            </Button>
+            <Button type="button" onClick={() => void submitCreate()} disabled={isCreating}>
+              {isCreating ? "创建中..." : "确认创建"}
             </Button>
           </DialogFooter>
         </DialogContent>

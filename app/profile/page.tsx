@@ -124,11 +124,7 @@ export default function UserInfo() {
     <div className="px-[10vw] py-8">
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
         <div className="space-y-6">
-          <UserInfoCard
-            user={user}
-            followingCount={profileData.followingRecords.length}
-            followerCount={profileData.followerRecords.length}
-          />
+          <UserInfoCard user={user} />
         </div>
 
         <div className="flex-1">

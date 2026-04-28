@@ -37,6 +37,8 @@ export default async function CommunityPostPage({ params }: PageProps) {
           select: {
             id: true,
             name: true,
+            role: true,
+            points: true,
             _count: {
               select: {
                 courseReviews: true,
@@ -180,9 +182,12 @@ export default async function CommunityPostPage({ params }: PageProps) {
     id: post.author.id,
     nickname: post.author.name ?? "匿名同学",
     avatarUrl: "",
+    role: post.author.role,
     reviewCount: (post.author._count.courseReviews ?? 0) + (post.author._count.teacherReviews ?? 0),
     likedCount: likedSummary._sum.likeCount ?? 0,
-    points: 0,
+    followingCount,
+    followerCount,
+    points: post.author.points,
   };
 
   return (
