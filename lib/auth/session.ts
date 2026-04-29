@@ -159,13 +159,17 @@ export function getSessionUserId(source: unknown) {
   return session?.userId ?? null;
 }
 
-export function setAuthSessionCookie(response: NextResponse, token: string) {
+export function setAuthSessionCookie(
+  response: NextResponse,
+  token: string,
+  options?: { maxAge?: number },
+) {
   response.cookies.set(AUTH_SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: Math.floor(AUTH_SESSION_TTL_MS / 1000),
+    maxAge: options?.maxAge ?? Math.floor(AUTH_SESSION_TTL_MS / 1000),
   });
 }
 
