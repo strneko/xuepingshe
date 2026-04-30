@@ -48,7 +48,7 @@ export default function ScoreBox({ score, className, digits = 1, placeholder = "
         className,
       )}
     >
-      {score.toFixed(digits)}
+      {Number(score.toFixed(digits))}
     </span>
   );
 }

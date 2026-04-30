@@ -34,7 +34,7 @@ export default function ReviewBriefCard({
           </Avatar>
           <div>
             <p className="text-sm font-medium">{review.nickname}</p>
-            <p className="text-xs text-muted-foreground">{review.createdAt}</p>
+            <p className="text-xs text-muted-foreground">{review.createdAt.slice(0, 10)}</p>
             {showCourse && sourceCourse && <p className="text-xs text-muted-foreground">课程：{sourceCourse}</p>}
             {showTeacher && sourceTeacher && <p className="text-xs text-muted-foreground">教师：{sourceTeacher}</p>}
           </div>
@@ -46,7 +46,7 @@ export default function ReviewBriefCard({
       </div>
       <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
         综合评分：
-        <ScoreBox score={review.overallScore} digits={1} />
+        <ScoreBox score={review.overallScore} digits={review.detailedScores?.length ? 2 : 0} />
       </p>
       <p className="text-sm text-muted-foreground">{review.summary}</p>
     </div>

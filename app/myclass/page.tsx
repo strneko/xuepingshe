@@ -26,6 +26,7 @@ export interface CourseCardProps {
   inviteCode?: string | null;
   recentScore?: number | null;
   reviewCount?: number;
+  activeRoundId?: string | null;
 }
 
 interface MyClassPageProps {

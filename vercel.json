@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/reviews/recommended-rebuild",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/reviews/aggregate-score-history",
+      "schedule": "0 3 * * *"
     }
   ]
 }

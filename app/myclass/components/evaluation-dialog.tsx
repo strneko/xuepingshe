@@ -351,7 +351,7 @@ export default function EvaluationDialog({
                     />
                     <ScoreBox
                       score={overallScore}
-                      digits={2}
+                      digits={mode === "manual" ? 0 : 2}
                       className="inline-flex min-w-16 justify-end text-xl font-bold"
                     />
                   </div>

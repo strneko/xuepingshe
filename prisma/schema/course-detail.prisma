@@ -52,6 +52,7 @@ model CourseReview {
   id               String   @id @default(cuid())
   courseId         String
   userId           String
+  roundId          String?
   nickname         String
   avatarUrl        String?
   createdAt        DateTime @default(now())
@@ -63,11 +64,31 @@ model CourseReview {
   status           CourseReviewStatus @default(VISIBLE)
 
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  round            ReviewRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
   likes            CourseReviewLike[]
 
+  @@unique([roundId, userId])
   @@index([courseId, createdAt])
   @@index([courseId, likesCount])
   @@index([userId, createdAt])
+}
+
+model ReviewRound {
+  id         String   @id @default(cuid())
+  offeringId String
+  courseId   String
+  label      String
+  startsAt   DateTime
+  endsAt     DateTime
+  aggregated Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  offering   CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+  reviews    CourseReview[]
+
+  @@unique([offeringId, label])
+  @@index([offeringId, startsAt])
 }
 
 model CourseReviewLike {

@@ -7,6 +7,7 @@ import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
 import { getCourseDetail } from "./_data/get-course-detail";
 import { headers } from "next/headers";
 import { getSessionUserId } from "@/lib/auth/session";
+import { getActiveRoundWithReviewStatus } from "@/lib/review-round/service";
 import { recordBrowseHistory } from "@/lib/profile/browse-history";
 import { prisma } from "@/lib/prisma";
 import CourseManagementCard from "./components/course-management-card";
@@ -33,7 +34,43 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   const isCourseTeacher = currentUser?.role === "TEACHER" && teacherName.length > 0;
   const isStudent = currentUser?.role === "STUDENT";
 
-  const inviteCode = isCourseTeacher
+  // Query student's enrollment and active review round
+  let enrollmentOfferingId: string | null = null;
+  let activeRoundInfo: {
+    id: string;
+    label: string;
+    startsAt: string;
+    endsAt: string;
+  } | null = null;
+  let hasReviewed = false;
+
+  if (isStudent && userId) {
+    const enrollment = await prisma.enrollment.findFirst({
+      where: {
+        userId,
+        courseId: detail.courseId,
+        status: "ACTIVE",
+      },
+      orderBy: { enrolledAt: "desc" },
+      select: { offeringId: true },
+    });
+
+    if (enrollment) {
+      enrollmentOfferingId = enrollment.offeringId;
+      const roundStatus = await getActiveRoundWithReviewStatus(enrollment.offeringId, userId);
+      if (roundStatus.round) {
+        activeRoundInfo = {
+          id: roundStatus.round.id,
+          label: roundStatus.round.label,
+          startsAt: roundStatus.round.startsAt.toISOString(),
+          endsAt: roundStatus.round.endsAt.toISOString(),
+        };
+      }
+      hasReviewed = roundStatus.hasReviewed;
+    }
+  }
+
+  const inviteCodeData = isCourseTeacher
     ? await prisma.courseInviteCode.findFirst({
         where: {
           courseId: detail.courseId,
@@ -45,9 +82,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         orderBy: [{ updatedAt: "desc" }],
         select: {
           code: true,
+          offeringId: true,
         },
       })
     : null;
+
+  const inviteCode = inviteCodeData?.code ?? null;
+  const teacherOfferingId = inviteCodeData?.offeringId ?? null;
 
   if (userId) {
     await recordBrowseHistory({
@@ -74,7 +115,8 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
               isCourseTeacher ? (
                 <CourseManagementCard
                   courseId={detail.courseId}
-                  inviteCode={inviteCode?.code ?? null}
+                  offeringId={teacherOfferingId}
+                  inviteCode={inviteCode}
                   initialCourseName={detail.courseName}
                   initialTeacherName={detail.teacher}
                   initialIntro={detail.intro}
@@ -85,8 +127,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
             }
           />
           <CourseTabs courseId={detail.courseId} announcements={detail.announcements} resources={detail.resources} />
-          {isStudent ? (
-            <CourseReviewCompose courseId={detail.courseId} courseName={detail.courseName} teacher={detail.teacher} />
+          {isStudent && enrollmentOfferingId ? (
+            <CourseReviewCompose
+              courseId={detail.courseId}
+              courseName={detail.courseName}
+              teacher={detail.teacher}
+              offeringId={enrollmentOfferingId}
+              activeRound={activeRoundInfo}
+              hasReviewed={hasReviewed}
+            />
           ) : null}
           <CourseReviewSection courseId={detail.courseId} initialReviews={detail.initialReviews} />
         </section>

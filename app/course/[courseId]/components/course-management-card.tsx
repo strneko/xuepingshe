@@ -15,9 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { ListChecks } from "lucide-react";
+import ReviewRoundManagementDialog from "@/app/myclass/components/review-round-management-dialog";
 
 interface CourseManagementCardProps {
   courseId: string;
+  offeringId: string | null;
   inviteCode: string | null;
   initialCourseName: string;
   initialTeacherName: string;
@@ -28,6 +31,7 @@ interface CourseManagementCardProps {
 
 export default function CourseManagementCard({
   courseId,
+  offeringId,
   inviteCode,
   initialCourseName,
   initialTeacherName,
@@ -37,6 +41,7 @@ export default function CourseManagementCard({
 }: CourseManagementCardProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isRoundManagementOpen, setIsRoundManagementOpen] = useState(false);
   const [courseName, setCourseName] = useState(initialCourseName);
   const [teacherName, setTeacherName] = useState(initialTeacherName);
   const [intro, setIntro] = useState(initialIntro);
@@ -133,6 +138,16 @@ export default function CourseManagementCard({
         <Button type="button" variant="outline" onClick={openDialog}>
           修改课程信息
         </Button>
+        {offeringId && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsRoundManagementOpen(true)}
+          >
+            <ListChecks className="mr-1 size-4" />
+            评价轮次管理
+          </Button>
+        )}
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -171,6 +186,16 @@ export default function CourseManagementCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {offeringId && (
+        <ReviewRoundManagementDialog
+          open={isRoundManagementOpen}
+          onOpenChange={setIsRoundManagementOpen}
+          courseId={courseId}
+          offeringId={offeringId}
+          courseName={initialCourseName}
+        />
+      )}
     </>
   );
 }

@@ -19,6 +19,7 @@ export interface MyClassCourseItem {
   inviteCode?: string | null;
   recentScore?: number | null;
   reviewCount?: number;
+  activeRoundId?: string | null;
 }
 
 export interface GetMyClassCoursesInput {
@@ -73,7 +74,9 @@ function formatDeadline(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 function formatCredits(value: unknown) {
@@ -181,6 +184,26 @@ export async function getMyClassCourses(input: GetMyClassCoursesInput): Promise<
       }),
     ]);
 
+    const offeringIds = offerings.map((o) => o.id);
+    const now = new Date();
+    const teacherActiveRounds = offeringIds.length > 0
+      ? await prisma.reviewRound.findMany({
+          where: {
+            offeringId: { in: offeringIds },
+            startsAt: { lte: now },
+            endsAt: { gt: now },
+          },
+          select: { id: true, offeringId: true, endsAt: true },
+        })
+      : [];
+
+    const roundDeadlineByOffering = new Map(
+      teacherActiveRounds.map((r) => [r.offeringId, r.endsAt.toISOString()]),
+    );
+    const activeRoundIdByTeacherOffering = new Map(
+      teacherActiveRounds.map((r) => [r.offeringId, r.id]),
+    );
+
     const profileMap = new Map(
       profiles.map((item) => [
         item.courseId,
@@ -219,13 +242,16 @@ export async function getMyClassCourses(input: GetMyClassCoursesInput): Promise<
         location: profile?.location?.trim() || "待补充",
         time: profile?.schedule?.trim() || "待补充",
         imageUrl: "#",
-        deadline: item.endAt ? formatDeadline(item.endAt) : formatDeadline(fallbackDeadline),
+        deadline: roundDeadlineByOffering.get(item.id)
+          ? formatDeadline(new Date(roundDeadlineByOffering.get(item.id)!))
+          : (item.endAt ? formatDeadline(item.endAt) : formatDeadline(fallbackDeadline)),
         isEvaluated: false,
         description: profile?.intro?.trim() || "课程信息待补充",
         credits: "-",
         inviteCode: item.inviteCode?.isActive ? item.inviteCode.code : null,
         recentScore: score?.score ?? null,
         reviewCount: score?.reviewCount ?? 0,
+        activeRoundId: activeRoundIdByTeacherOffering.get(item.id) ?? null,
       };
     });
 
@@ -255,47 +281,79 @@ export async function getMyClassCourses(input: GetMyClassCoursesInput): Promise<
     };
   }
 
-  const [enrollments, userCourseReviews] = await Promise.all([
-    prisma.enrollment.findMany({
-      where: {
-        userId,
-        status: "ACTIVE",
-      },
-      select: {
-        id: true,
-        courseId: true,
-        courseName: true,
-        teacherName: true,
-        classTime: true,
-        location: true,
-        credits: true,
-        enrolledAt: true,
-        term: true,
-        offeringId: true,
-        offering: {
-          select: {
-            status: true,
-            semesterKey: true,
-            endAt: true,
-          },
+  const enrollments = await prisma.enrollment.findMany({
+    where: {
+      userId,
+      status: "ACTIVE",
+    },
+    select: {
+      id: true,
+      courseId: true,
+      courseName: true,
+      teacherName: true,
+      classTime: true,
+      location: true,
+      credits: true,
+      enrolledAt: true,
+      term: true,
+      offeringId: true,
+      offering: {
+        select: {
+          status: true,
+          semesterKey: true,
+          endAt: true,
         },
       },
-      orderBy: [{ enrolledAt: "desc" }, { createdAt: "desc" }],
-    }),
-    prisma.courseReview.findMany({
-      where: {
-        userId,
-        status: {
-          not: "DELETED",
-        },
-      },
-      select: {
-        courseId: true,
-      },
-    }),
-  ]);
+    },
+    orderBy: [{ enrolledAt: "desc" }, { createdAt: "desc" }],
+  });
 
-  const evaluatedCourseIds = new Set(userCourseReviews.map((item) => item.courseId));
+  // Determine which courses have been evaluated in the current active round
+  const offeringIds = enrollments.map((e) => e.offeringId);
+  const now = new Date();
+  const activeRounds = offeringIds.length > 0
+    ? await prisma.reviewRound.findMany({
+        where: {
+          offeringId: { in: offeringIds },
+          startsAt: { lte: now },
+          endsAt: { gt: now },
+        },
+        select: {
+          id: true,
+          courseId: true,
+          offeringId: true,
+          endsAt: true,
+        },
+      })
+    : [];
+
+  const activeRoundIds = activeRounds.map((r) => r.id);
+  // offeringId → active round deadline
+  const activeRoundDeadlineByOffering = new Map(
+    activeRounds.map((r) => [r.offeringId, r.endsAt.toISOString()]),
+  );
+  // offeringId → active round id
+  const activeRoundIdByOffering = new Map(
+    activeRounds.map((r) => [r.offeringId, r.id]),
+  );
+
+  const userActiveReviews = activeRoundIds.length > 0
+    ? await prisma.courseReview.findMany({
+        where: {
+          userId,
+          roundId: { in: activeRoundIds },
+        },
+        select: {
+          courseId: true,
+          roundId: true,
+        },
+      })
+    : [];
+
+  // courseIds where user has reviewed the active round
+  const evaluatedCourseIds = new Set(userActiveReviews.map((r) => r.courseId));
+  // courseIds that currently have an active review round
+  const coursesWithActiveRound = new Set(activeRounds.map((r) => r.courseId));
 
   let items: MyClassCourseItem[] = enrollments.map((item) => ({
     enrollmentId: item.id,
@@ -309,17 +367,22 @@ export async function getMyClassCourses(input: GetMyClassCoursesInput): Promise<
     location: item.location?.trim() || "待同步",
     time: item.classTime?.trim() || "待教务系统同步",
     imageUrl: "#",
-    deadline: item.offering.endAt ? formatDeadline(item.offering.endAt) : buildDeadline(item.enrolledAt),
+    deadline: activeRoundDeadlineByOffering.get(item.offeringId)
+      ? formatDeadline(new Date(activeRoundDeadlineByOffering.get(item.offeringId)!))
+      : (item.offering.endAt ? formatDeadline(item.offering.endAt) : buildDeadline(item.enrolledAt)),
     isEvaluated: evaluatedCourseIds.has(item.courseId),
     description: "课程信息来自已加入课程",
     credits: formatCredits(item.credits as unknown),
     inviteCode: null,
     recentScore: null,
     reviewCount: 0,
+    activeRoundId: activeRoundIdByOffering.get(item.offeringId) ?? null,
   }));
 
   if (onlyUnevaluated) {
-    items = items.filter((item) => !item.isEvaluated);
+    items = items.filter(
+      (item) => coursesWithActiveRound.has(item.courseId) && !item.isEvaluated,
+    );
   }
 
   if (keyword) {

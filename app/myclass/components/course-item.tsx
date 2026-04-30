@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
+import { Calendar, ListChecks } from "lucide-react";
 import { CourseCardProps } from "../page";
 import EvaluationDialog, { type EvaluationSubmitPayload } from "./evaluation-dialog";
+import ReviewRoundManagementDialog from "./review-round-management-dialog";
 import SearchResultCard from "@/components/search-result-card";
 import ScoreBox from "@/components/score-box";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ export function CourseCard({
   inviteCode = null,
   recentScore = null,
   reviewCount = 0,
+  activeRoundId = null,
   keyword = "",
 }: MyClassCourseCardProps) {
   const [isEvaluationOpen, setIsEvaluationOpen] = useState(false);
@@ -50,8 +52,9 @@ export function CourseCard({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statusDialogAction, setStatusDialogAction] = useState<"OPEN" | "CLOSED" | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isRoundManagementOpen, setIsRoundManagementOpen] = useState(false);
   const isTeacherView = viewerRole === "TEACHER";
-  const canEvaluate = courseStatus === "OPEN" && !evaluated;
+  const canEvaluate = courseStatus === "OPEN" && !evaluated && activeRoundId !== null;
   const nextStatusAction = courseStatus === "OPEN" ? "CLOSED" : "OPEN";
   const statusToggleLabel = courseStatus === "OPEN" ? "结课" : "开课";
 
@@ -125,6 +128,7 @@ export function CourseCard({
           summary: payload.summary,
           detailedScores: payload.detailedScores,
           nickname: "匿名同学",
+          roundId: activeRoundId,
         }),
       });
 
@@ -166,6 +170,14 @@ export function CourseCard({
                 >
                   {statusToggleLabel}
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsRoundManagementOpen(true)}
+                >
+                  <ListChecks className="size-4" />
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">课程近期评分</p>
               <p className="text-sm text-foreground">
@@ -201,6 +213,10 @@ export function CourseCard({
                 <Button disabled variant="secondary" className="w-full cursor-not-allowed opacity-70">
                   已结课
                 </Button>
+              ) : activeRoundId === null ? (
+                <Button disabled variant="secondary" className="w-full cursor-not-allowed opacity-70">
+                  暂无评价
+                </Button>
               ) : (
                 <Button onClick={openEvaluation} className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "提交中..." : "去评教"}
@@ -209,8 +225,8 @@ export function CourseCard({
 
               {submitError && <p className="text-center text-xs text-destructive">{submitError}</p>}
 
-              <p className="inline-flex items-center gap-1 text-center text-xs text-muted-foreground">
-                <Calendar className="size-3" />
+              <p className="inline-flex items-center gap-1 text-center text-xs text-muted-foreground whitespace-nowrap">
+                <Calendar className="size-3 shrink-0" />
                 截止：{deadline}
               </p>
 
@@ -246,7 +262,15 @@ export function CourseCard({
         </DialogContent>
       </Dialog>
 
-      {isTeacherView ? null : (
+      {isTeacherView ? (
+        <ReviewRoundManagementDialog
+          open={isRoundManagementOpen}
+          onOpenChange={setIsRoundManagementOpen}
+          courseId={courseId}
+          offeringId={offeringId}
+          courseName={courseName}
+        />
+      ) : (
         <EvaluationDialog
           open={isEvaluationOpen}
           onOpenChange={setIsEvaluationOpen}

@@ -40,6 +40,7 @@ export default function CoursesList({ courses: classes, keyword = "" }: CourseLi
               inviteCode={course.inviteCode}
               recentScore={course.recentScore}
               reviewCount={course.reviewCount}
+              activeRoundId={course.activeRoundId}
               keyword={keyword}
             />
             {index < classes.length - 1 ? <Separator /> : null}

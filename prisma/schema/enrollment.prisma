@@ -28,6 +28,7 @@ model CourseOffering {
   updatedAt      DateTime            @updatedAt
 
   enrollments    Enrollment[]
+  reviewRounds   ReviewRound[]
   inviteCode     CourseInviteCode?
 
   @@unique([courseId, semesterKey])

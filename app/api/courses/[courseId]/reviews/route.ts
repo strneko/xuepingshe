@@ -50,16 +50,28 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const detailedScoresValue = (body as { detailedScores?: unknown }).detailedScores;
   const detailedScores = Array.isArray(detailedScoresValue) ? detailedScoresValue : null;
   const detailedScoresJson = detailedScores ?? undefined;
+  const roundId = normalizeString((body as { roundId?: unknown }).roundId, "") || null;
 
   const sessionUserId = getSessionUserId(request.headers);
   if (!sessionUserId) {
     return NextResponse.json({ message: "请先登录后再提交评价" }, { status: 401 });
   }
 
+  if (roundId) {
+    const existing = await prisma.courseReview.findFirst({
+      where: { roundId, userId: sessionUserId },
+      select: { id: true },
+    });
+    if (existing) {
+      return NextResponse.json({ message: "您已评价过本轮课程" }, { status: 409 });
+    }
+  }
+
   const review = await prisma.courseReview.create({
     data: {
       courseId,
       userId: sessionUserId,
+      roundId,
       nickname,
       avatarUrl,
       overallScore,

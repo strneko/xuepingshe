@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentCourseScore } from "@/lib/score-history/aggregator";
 import { CourseDetailData, DimensionScore } from "../_types";
 
 interface CourseDetailRecord extends Omit<CourseDetailData, "initialReviews" | "topReviews"> {
@@ -65,7 +66,7 @@ function parseTeacherName(subtitle: string | null | undefined) {
 }
 
 export async function getCourseSource(courseId: string): Promise<CourseDetailRecord> {
-  const [courseProfile, courseDoc, latestHistory, reviewAggregate, announcements] = await Promise.all([
+  const [courseProfile, courseDoc, reviewAggregate, announcements] = await Promise.all([
     prisma.courseProfile.findUnique({
       where: {
         courseId,
@@ -90,23 +91,6 @@ export async function getCourseSource(courseId: string): Promise<CourseDetailRec
         subtitle: true,
         snippet: true,
         scoreSnapshot: true,
-      },
-    }),
-    prisma.courseScoreHistory.findFirst({
-      where: {
-        courseId,
-        granularity: "SEMESTER",
-      },
-      orderBy: [{ sortOrder: "desc" }],
-      select: {
-        overallScore: true,
-        attitude: true,
-        content: true,
-        method: true,
-        effect: true,
-        interaction: true,
-        resource: true,
-        improve: true,
       },
     }),
     prisma.courseReview.aggregate({
@@ -143,9 +127,10 @@ export async function getCourseSource(courseId: string): Promise<CourseDetailRec
     },
   });
 
-  const recentOverallScore = normalizeScore(
-    latestHistory?.overallScore ?? reviewAggregate._avg.overallScore ?? courseDoc?.scoreSnapshot,
-  );
+  const currentScore = await getCurrentCourseScore(courseId);
+  const recentOverallScore = currentScore.overallScore > 0
+    ? currentScore.overallScore
+    : normalizeScore(reviewAggregate._avg.overallScore ?? courseDoc?.scoreSnapshot);
 
   return {
     courseId,
@@ -158,13 +143,13 @@ export async function getCourseSource(courseId: string): Promise<CourseDetailRec
     recentOverallScore,
     recentSevenScores: buildSevenScores({
       overall: recentOverallScore,
-      attitude: latestHistory?.attitude,
-      content: latestHistory?.content,
-      method: latestHistory?.method,
-      effect: latestHistory?.effect,
-      interaction: latestHistory?.interaction,
-      resource: latestHistory?.resource,
-      improve: latestHistory?.improve,
+      attitude: currentScore.dimensions.attitude,
+      content: currentScore.dimensions.content,
+      method: currentScore.dimensions.method,
+      effect: currentScore.dimensions.effect,
+      interaction: currentScore.dimensions.interaction,
+      resource: currentScore.dimensions.resource,
+      improve: currentScore.dimensions.improve,
     }),
     announcements: announcements.map((item) => ({
       id: item.id,

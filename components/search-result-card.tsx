@@ -61,8 +61,10 @@ export default function SearchResultCard({
         <Link href={href} className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base">{highlightText(title, keyword)}</CardTitle>
-              <Badge variant={type === "course" ? "default" : "secondary"}>{type === "course" ? "课程" : "教师"}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant={type === "course" ? "default" : "secondary"}>{type === "course" ? "课程" : "教师"}</Badge>
+                <CardTitle className="text-base">{highlightText(title, keyword)}</CardTitle>
+              </div>
             </div>
             <CardDescription>{highlightText(subtitle, keyword)}</CardDescription>
           </div>

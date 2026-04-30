@@ -18,13 +18,13 @@ interface ReviewDetailedCardProps {
   className?: string;
 }
 
-function ScoreWithWeight({ score, weight }: { score: number | null; weight?: number }) {
+function ScoreWithWeight({ score, weight, digits }: { score: number | null; weight?: number; digits: number }) {
   const normalizedWeight = weight ?? 1;
   const shouldShowWeight = score !== null && normalizedWeight > 0;
 
   return (
     <span className="inline-flex items-center gap-1">
-      <ScoreBox score={score} digits={1} />
+      <ScoreBox score={score} digits={digits} />
       {shouldShowWeight && (
         <span className="w-4 text-center text-[10px] text-muted-foreground tabular-nums">x{normalizedWeight}</span>
       )}
@@ -53,6 +53,7 @@ export default function ReviewDetailedCard({
     }));
   const hasSummary = review.summary.trim().length > 0;
   const hasDetailedScores = detailedScores.length > 0;
+  const scoreDigits = hasDetailedScores ? 2 : 0;
 
   return (
     <div className={cn("@container space-y-2", className)}>
@@ -64,7 +65,7 @@ export default function ReviewDetailedCard({
           </Avatar>
           <div>
             <p className="text-sm font-medium">{review.nickname}</p>
-            <p className="text-xs text-muted-foreground">{review.createdAt}</p>
+            <p className="text-xs text-muted-foreground">{review.createdAt.slice(0, 10)}</p>
             {showSourceCourse && sourceCourse && <p className="text-xs text-muted-foreground">课程：{sourceCourse}</p>}
             {showSourceTeacher && sourceTeacher && (
               <p className="text-xs text-muted-foreground">教师：{sourceTeacher}</p>
@@ -74,7 +75,7 @@ export default function ReviewDetailedCard({
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             综合评分
-            <ScoreBox score={review.overallScore} digits={1} />
+            <ScoreBox score={review.overallScore} digits={scoreDigits} />
           </span>
           <Button
             type="button"
@@ -129,7 +130,7 @@ export default function ReviewDetailedCard({
                               className="flex items-center justify-between gap-2"
                             >
                               <span className="text-xs text-muted-foreground">{subItem.label}</span>
-                              <ScoreWithWeight score={subItem.score} weight={subItem.weight} />
+                              <ScoreWithWeight score={subItem.score} weight={subItem.weight} digits={scoreDigits} />
                             </div>
                           ))}
                         </div>
@@ -138,7 +139,7 @@ export default function ReviewDetailedCard({
                   )}
                   <div className="flex items-center justify-between gap-2">
                     <span className="pr-5 text-xs text-muted-foreground whitespace-nowrap">{item.label}</span>
-                    <ScoreWithWeight score={item.score} weight={item.weight} />
+                    <ScoreWithWeight score={item.score} weight={item.weight} digits={scoreDigits} />
                   </div>
                 </div>
               ))}
@@ -165,7 +166,7 @@ export default function ReviewDetailedCard({
                               className="flex items-center justify-between gap-2"
                             >
                               <span className="text-xs text-muted-foreground">{subItem.label}</span>
-                              <ScoreWithWeight score={subItem.score} weight={subItem.weight} />
+                              <ScoreWithWeight score={subItem.score} weight={subItem.weight} digits={scoreDigits} />
                             </div>
                           ))}
                         </div>
@@ -174,7 +175,7 @@ export default function ReviewDetailedCard({
                   )}
                   <div className="flex items-center justify-between gap-2">
                     <span className="pr-5 text-xs text-muted-foreground whitespace-nowrap">{item.label}</span>
-                    <ScoreWithWeight score={item.score} weight={item.weight} />
+                    <ScoreWithWeight score={item.score} weight={item.weight} digits={scoreDigits} />
                   </div>
                 </div>
               ))}
