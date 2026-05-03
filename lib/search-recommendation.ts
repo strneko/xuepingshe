@@ -11,6 +11,7 @@ export interface SearchDocumentRecord {
   scoreSnapshot: number;
   reviewCountSnapshot: number;
   snippet: string;
+  searchableText?: string | null;
 }
 
 export interface SearchResultItem {
@@ -48,7 +49,11 @@ export function computeRelevance(item: SearchResultItem, keyword: string) {
     return 0;
   }
 
-  const target = `${item.title} ${item.subtitle} ${item.department} ${item.snippet}`.toLowerCase();
+  // Use searchableText if available, otherwise fall back to field concatenation
+  const target = ((item as unknown as { searchableText?: string | null }).searchableText
+    ?? `${item.title} ${item.subtitle} ${item.department} ${item.snippet}`
+  ).toLowerCase();
+
   if (!target.includes(keyword)) {
     return -1;
   }
@@ -73,7 +78,8 @@ export function toSearchResultItem(record: SearchDocumentRecord): SearchResultIt
     reviewCount: record.reviewCountSnapshot,
     snippet: record.snippet,
     href: type === "course" ? `/course/${record.docId}` : `/teacher/${record.docId}`,
-  };
+    searchableText: record.searchableText ?? undefined,
+  } as SearchResultItem & { searchableText?: string };
 }
 
 function isRecordLike(value: unknown): value is Record<string, unknown> {

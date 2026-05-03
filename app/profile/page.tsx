@@ -4,9 +4,8 @@ import * as React from "react";
 import HistoryList from "./components/history-list";
 import RecordTabs, { UserRecordTab } from "./components/record-tabs";
 import Pagination from "@/components/pagination";
-import UserInfoCard from "@/components/user-info-card";
+import ProfileCards from "@/components/profile-cards";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuthStore } from "@/lib/stores/auth-store";
 import { useSearchParams } from "next/navigation";
 import {
   BrowseRecord,
@@ -51,7 +50,6 @@ const isValidTab = (tab: string | null): tab is UserRecordTab =>
   tab === "followers";
 
 export default function UserInfo() {
-  const user = useAuthStore((state) => state.user);
   const searchParams = useSearchParams();
   const [profileData, setProfileData] = React.useState(EMPTY_PROFILE_DATA);
   const [loading, setLoading] = React.useState(true);
@@ -122,9 +120,9 @@ export default function UserInfo() {
 
   return (
     <div className="px-[10vw] py-8">
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[30vw_50vw]">
         <div className="space-y-6">
-          <UserInfoCard user={user} />
+          <ProfileCards />
         </div>
 
         <div className="flex-1">

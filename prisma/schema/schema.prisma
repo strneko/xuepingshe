@@ -29,6 +29,7 @@ model User {
   posts              Post[]
   courseReviews      CourseReview[]
   courseReviewLikes  CourseReviewLike[]
+  teacherProfile     TeacherProfile?
   teacherReviews     TeacherReview[]
   teacherReviewLikes TeacherReviewLike[]
   recommendedReviewLikes RecommendedReviewLike[]

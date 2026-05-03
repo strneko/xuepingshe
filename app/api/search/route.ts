@@ -14,11 +14,28 @@ export async function GET(request: NextRequest) {
   const safePage = Number.isFinite(page) && page > 0 ? Math.trunc(page) : 1;
   const safePageSize = Number.isFinite(pageSize) && pageSize > 0 ? Math.trunc(pageSize) : 20;
 
-  const where = {
-    ...(category === "1" ? { docType: "COURSE" as const } : {}),
-    ...(category === "2" ? { docType: "TEACHER" as const } : {}),
-  };
+  // Build where clause
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {};
+  if (keyword) {
+    where.searchableText = { contains: keyword, mode: "insensitive" };
+  }
+  if (category === "1") {
+    where.docType = "COURSE";
+  } else if (category === "2") {
+    where.docType = "TEACHER";
+  }
 
+  // Map sort to orderBy
+  let orderBy: Record<string, string> | undefined;
+  if (sort === "score") {
+    orderBy = { scoreSnapshot: "desc" };
+  } else if (sort === "hot") {
+    orderBy = { reviewCountSnapshot: "desc" };
+  }
+
+  // DB-level pagination
+  const total = await prisma.searchDocument.count({ where });
   const documents = await prisma.searchDocument.findMany({
     where,
     select: {
@@ -30,39 +47,52 @@ export async function GET(request: NextRequest) {
       scoreSnapshot: true,
       reviewCountSnapshot: true,
       snippet: true,
+      searchableText: true,
     },
+    ...(orderBy ? { orderBy } : {}),
+    skip: (safePage - 1) * safePageSize,
+    take: safePageSize,
   });
 
-  const itemsWithRelevance = documents
-    .map((document) => {
-      const item = toSearchResultItem(document);
+  // Convert and compute relevance when sorting by relevance with keyword
+  const items = documents.map((doc) => {
+    const item = toSearchResultItem(doc);
+    if (keyword && sort === "relevance") {
       return { item, relevance: computeRelevance(item, keyword) };
-    })
-    .filter(({ relevance }) => relevance >= 0 || !keyword);
+    }
+    return { item, relevance: 0 };
+  });
 
-  const sorted = itemsWithRelevance
-    .sort((a, b) => {
-      if (sort === "score") return b.item.score - a.item.score;
-      if (sort === "hot") return b.item.reviewCount - a.item.reviewCount;
-      return b.relevance - a.relevance || b.item.reviewCount - a.item.reviewCount;
-    })
-    .map(({ item }) => item);
+  if (sort === "relevance" && keyword) {
+    items.sort((a, b) => b.relevance - a.relevance || b.item.reviewCount - a.item.reviewCount);
+  }
 
-  const total = sorted.length;
-  const start = (safePage - 1) * safePageSize;
-  const end = start + safePageSize;
-  const items = sorted.slice(start, end);
+  const resultItems = items.map(({ item }) => item);
 
-  const courseCount = sorted.filter((item) => item.type === "course").length;
-  const teacherCount = sorted.filter((item) => item.type === "teacher").length;
+  // Count totals for category display (separate lightweight query)
+  let courseCount: number;
+  let teacherCount: number;
+  if (category === "0") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const countWhere: any = keyword ? { searchableText: { contains: keyword, mode: "insensitive" } } : {};
+    const [cCount, tCount] = await Promise.all([
+      prisma.searchDocument.count({ where: { ...countWhere, docType: "COURSE" } }),
+      prisma.searchDocument.count({ where: { ...countWhere, docType: "TEACHER" } }),
+    ]);
+    courseCount = cCount;
+    teacherCount = tCount;
+  } else {
+    courseCount = category === "1" ? total : 0;
+    teacherCount = category === "2" ? total : 0;
+  }
 
   return NextResponse.json({
-    items,
+    items: resultItems,
     total,
     courseCount,
     teacherCount,
     page: safePage,
     pageSize: safePageSize,
-    hasMore: end < total,
+    hasMore: safePage * safePageSize < total,
   });
 }

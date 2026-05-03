@@ -7,6 +7,7 @@ enum TeacherReviewStatus {
 
 model TeacherProfile {
   teacherId          String   @id
+  userId             String?  @unique
   teacherName        String
   avatarUrl          String?
   department         String
@@ -19,6 +20,7 @@ model TeacherProfile {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  user               User?    @relation(fields: [userId], references: [id])
   courses            TeacherCourse[]
 }
 

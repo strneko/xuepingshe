@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { syncScoreSnapshots, syncTeacherSearchDocument } from "@/lib/search/sync";
 
 const HALF_LIFE_DAYS = 30;
 const DIMENSION_KEYS = [
@@ -193,6 +194,9 @@ export async function aggregateRound(roundId: string): Promise<boolean> {
   // Derive teacher scores
   await deriveTeacherScores(round.offeringId, round.label);
 
+  // Sync search document score snapshots (best-effort)
+  syncScoreSnapshots(round.courseId).catch(() => {});
+
   return true;
 }
 
@@ -339,6 +343,9 @@ async function deriveTeacherScores(offeringId: string, roundLabel: string): Prom
         recentSevenScoresJson: sevenScoresJson,
       },
     });
+
+    // Sync teacher search document (best-effort)
+    syncTeacherSearchDocument(teacherId).catch(() => {});
   }
 }
 
@@ -371,6 +378,7 @@ export async function getCurrentCourseScore(courseId: string): Promise<{
     where: { courseId, granularity: "SEMESTER", overallScore: { not: null } },
     orderBy: { sortOrder: "asc" },
     select: {
+      cursorKey: true,
       overallScore: true,
       attitude: true,
       content: true,

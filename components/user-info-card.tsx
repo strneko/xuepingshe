@@ -28,7 +28,7 @@ export default function UserInfoCard({
   const [isFollowing, setIsFollowing] = React.useState(false);
 
   const handleProfileClick = () => {
-    router.push("/account");
+    router.push("/profile");
   };
 
   const handleLogoutClick = () => {

@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth/session";
 import { buildInviteCode, getCurrentSemesterKey } from "@/lib/course-offerings";
 import { prisma } from "@/lib/prisma";
+import { syncCourseSearchDocument } from "@/lib/search/sync";
 
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -94,6 +95,9 @@ export async function POST(request: NextRequest) {
 
         return { course, offering, inviteCode };
       });
+
+      // Sync search document (best-effort, don't block response)
+      syncCourseSearchDocument(result.course.courseId).catch(() => {});
 
       return NextResponse.json({
         message: "课程创建成功",
