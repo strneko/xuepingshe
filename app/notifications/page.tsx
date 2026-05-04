@@ -15,7 +15,7 @@ import { toast } from "sonner";
 type NotificationCategory = "system" | "liked" | "reply";
 
 function resolveCategory(item: NotificationItem): NotificationCategory {
-  if (item.eventType === "community.post.like") {
+  if (item.eventType === "community.post.like" || item.eventType === "course.review.like") {
     return "liked";
   }
 

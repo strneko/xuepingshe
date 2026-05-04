@@ -101,6 +101,44 @@ export async function enqueueCourseAnnouncementUpdatedNotification(input: {
   });
 }
 
+function normalizeNickname(value: string | null | undefined) {
+  return value?.trim() || "匿名同学";
+}
+
+export async function enqueueCourseReviewLikeNotification(input: {
+  courseId: string;
+  courseName: string;
+  reviewId: string;
+  reviewAuthorId: string;
+  actorId: string;
+  actorNickname: string | null;
+}) {
+  const summary = `你在《${input.courseName}》的评价收到了一次点赞`;
+  const payload = {
+    courseId: input.courseId,
+    courseName: input.courseName,
+    reviewId: input.reviewId,
+    href: `/course/${input.courseId}?tab=reviews`,
+    title: `${normalizeNickname(input.actorNickname)} 点赞了你的课程评价`,
+    summary,
+  };
+
+  await enqueueNotification({
+    eventType: "course.review.like",
+    bizId: input.reviewId,
+    actorId: input.actorId,
+    receiverIds: [input.reviewAuthorId],
+    payload,
+    dedupeKey: buildDefaultDedupeKey({
+      eventType: "course.review.like",
+      bizId: input.reviewId,
+      actorId: input.actorId,
+      receiverIds: [input.reviewAuthorId],
+      payload,
+    }),
+  });
+}
+
 export async function enqueueCourseResourceUploadedNotification(input: {
   courseId: string;
   resourceId: string;

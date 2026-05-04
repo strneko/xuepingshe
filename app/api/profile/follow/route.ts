@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/audit/audit-log";
+import { enqueueProfileFollowNotification } from "@/lib/profile/notifications";
 
 const ACTION_FOLLOW = "PROFILE_FOLLOW";
 const ACTION_UNFOLLOW = "PROFILE_UNFOLLOW";
@@ -58,7 +59,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "目标用户不存在" }, { status: 404 });
   }
 
-  await prisma.follow.upsert({
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+
+  const follow = await prisma.follow.upsert({
     where: {
       followerId_followingId: {
         followerId: userId,
@@ -77,6 +83,13 @@ export async function POST(request: NextRequest) {
     action: ACTION_FOLLOW,
     targetId: targetUserId,
   });
+
+  void enqueueProfileFollowNotification({
+    followId: follow.id,
+    actorId: userId,
+    actorNickname: currentUser?.name ?? null,
+    targetUserId,
+  }).catch(() => {});
 
   return NextResponse.json(await buildFollowResponse(userId, targetUserId, true));
 }

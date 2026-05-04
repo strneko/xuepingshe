@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth/session";
+import { enqueueCourseReviewLikeNotification } from "@/lib/course/notifications";
 
 interface RouteContext {
   params: Promise<{
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     select: {
       id: true,
       likesCount: true,
+      userId: true,
     },
   });
 
@@ -91,9 +93,30 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
   });
 
+  const liked = !existingLike;
+
+  if (liked && review.userId !== userId) {
+    const [currentUser, courseOffering] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      prisma.courseOffering.findFirst({
+        where: { courseId },
+        select: { courseName: true },
+      }),
+    ]);
+
+    void enqueueCourseReviewLikeNotification({
+      courseId,
+      courseName: courseOffering?.courseName ?? `课程 ${courseId}`,
+      reviewId,
+      reviewAuthorId: review.userId,
+      actorId: userId,
+      actorNickname: currentUser?.name ?? null,
+    }).catch(() => {});
+  }
+
   return NextResponse.json({
     reviewId: result.id,
     likesCount: result.likesCount,
-    liked: !existingLike,
+    liked,
   });
 }
