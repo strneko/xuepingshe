@@ -52,7 +52,7 @@ export default async function MyClassPage({ searchParams }: MyClassPageProps) {
     sort: params.sort === "desc" ? "desc" : "asc",
     keyword: params.keyword,
     page: Number(params.page ?? "1"),
-    pageSize: 3,
+    pageSize: 10,
   });
   const keyword = params.keyword?.trim() ?? "";
 

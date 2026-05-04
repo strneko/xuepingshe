@@ -101,11 +101,44 @@ model CommunityPostComment {
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
-  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    CommunityPost         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  replyTo CommunityPostComment? @relation("CommentReplies", fields: [replyToCommentId], references: [id])
+  replies CommunityPostComment[] @relation("CommentReplies")
 
-  @@index([postId, createdAt])
+  @@index([postId, status, createdAt])
+  @@index([postId, replyToCommentId])
   @@index([authorId, createdAt])
+}
+
+enum CommunityReportType {
+  POST
+  COMMENT
+}
+
+enum CommunityReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model CommunityReport {
+  id              String                @id @default(cuid())
+  reportType      CommunityReportType
+  status          CommunityReportStatus @default(PENDING)
+  reason          String
+  reporterId      String
+  targetPostId    String?
+  targetCommentId String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([reporterId, createdAt])
+  @@index([targetPostId])
+  @@index([targetCommentId])
 }
 
 model CommunityAnnouncement {

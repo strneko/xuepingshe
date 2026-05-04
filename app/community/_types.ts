@@ -31,8 +31,10 @@ export type CommunityPost = {
 export type CommunityComment = {
   id: string;
   content: string;
+  authorId: string;
   replyToCommentId?: string | null;
   createdAt: string;
+  updatedAt: string;
   author: {
     nickname: string;
     avatarUrl?: string;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { CommunityPost } from "@/app/community/_types";
 import { prisma } from "@/lib/prisma";
-import { resolveCurrentUserId, stripHtml } from "@/lib/community/shared";
+import { extractImages, resolveCurrentUserId, stripHtml } from "@/lib/community/shared";
 
 interface RouteContext {
   params: Promise<{ postId: string }>;
@@ -57,7 +57,7 @@ function toCommunityPost(post: {
     updatedAt: post.updatedAt.toISOString(),
     lastReplyAt: post.lastReplyAt?.toISOString(),
     content: stripHtml(post.contentHtml),
-    images: [],
+    images: extractImages(post.contentHtml),
     tags: post.topics.map((item) => item.topic.name),
     likesCount: post.likeCount,
     isLiked: false,

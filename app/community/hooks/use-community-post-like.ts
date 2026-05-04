@@ -128,7 +128,7 @@ export function useCommunityPostsLike({ setPosts }: UseCommunityPostsLikeOptions
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ liked: !previousPost.isLiked }),
+            body: JSON.stringify({ liked: !(previousPost as CommunityPost).isLiked }),
           });
 
           const data = (await response.json()) as {

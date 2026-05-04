@@ -5,6 +5,7 @@ import CharacterCount from "@tiptap/extension-character-count";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
@@ -15,6 +16,7 @@ import {
   Bold,
   Heading1,
   Heading2,
+  Image as ImageIcon,
   Italic,
   Link as LinkIcon,
   List,
@@ -26,6 +28,7 @@ import {
   Undo2,
 } from "lucide-react";
 
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +92,10 @@ export default function CommunityPostEditor({ value, onChange, placeholder, clas
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+      }),
     ],
     content: value || "<p></p>",
     onUpdate: ({ editor: currentEditor }) => {
@@ -97,7 +104,69 @@ export default function CommunityPostEditor({ value, onChange, placeholder, clas
     editorProps: {
       attributes: {
         class:
-          "min-h-[320px] outline-none [&_h1]:mb-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_a]:text-primary [&_a]:underline",
+          "min-h-[320px] outline-none [&_h1]:mb-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_a]:text-primary [&_a]:underline [&_img]:max-w-full [&_img]:max-h-80 [&_img]:rounded-lg [&_img]:object-contain",
+      },
+      handlePaste: (_view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (const item of Array.from(items)) {
+          if (item.type.startsWith("image/")) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (!file) continue;
+
+            if (file.size > 5 * 1024 * 1024) {
+              toast.error("图片大小不能超过 5MB");
+              return true;
+            }
+
+            const formData = new FormData();
+            formData.append("image", file);
+
+            fetch("/api/community/images", { method: "POST", body: formData })
+              .then((r) => r.json())
+              .then((data: { url?: string }) => {
+                if (data.url) {
+                  editor?.chain().setImage({ src: data.url }).run();
+                }
+              })
+              .catch(() => toast.error("图片上传失败"));
+
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (_view, event) => {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return false;
+
+        const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+        if (imageFiles.length === 0) return false;
+
+        event.preventDefault();
+
+        for (const file of imageFiles) {
+          if (file.size > 5 * 1024 * 1024) {
+            toast.error("图片大小不能超过 5MB");
+            continue;
+          }
+
+          const formData = new FormData();
+          formData.append("image", file);
+
+          fetch("/api/community/images", { method: "POST", body: formData })
+            .then((r) => r.json())
+            .then((data: { url?: string }) => {
+              if (data.url) {
+                editor?.chain().setImage({ src: data.url }).run();
+              }
+            })
+            .catch(() => toast.error("图片上传失败"));
+        }
+
+        return true;
       },
     },
   });
@@ -216,6 +285,41 @@ export default function CommunityPostEditor({ value, onChange, placeholder, clas
         </ToolbarButton>
         <ToolbarButton editor={editor} active={editor.isActive("link")} title="插入链接" onClick={toggleLink}>
           <LinkIcon className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          editor={editor}
+          title="插入图片"
+          onClick={() => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/png,image/jpeg,image/gif,image/webp";
+            input.onchange = () => {
+              const file = input.files?.[0];
+              if (!file) return;
+
+              if (file.size > 5 * 1024 * 1024) {
+                toast.error("图片大小不能超过 5MB");
+                return;
+              }
+
+              const formData = new FormData();
+              formData.append("image", file);
+
+              fetch("/api/community/images", { method: "POST", body: formData })
+                .then((r) => r.json())
+                .then((data: { message?: string; url?: string }) => {
+                  if (data.url) {
+                    editor.chain().focus().setImage({ src: data.url }).run();
+                  } else {
+                    toast.error(data.message ?? "上传失败");
+                  }
+                })
+                .catch(() => toast.error("图片上传失败"));
+            };
+            input.click();
+          }}
+        >
+          <ImageIcon className="size-4" />
         </ToolbarButton>
         <ToolbarButton
           editor={editor}

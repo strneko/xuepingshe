@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatRelativeTime } from "@/lib/time/format-relative-time";
 import { toast } from "sonner";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 import CommunityPostEditor from "./community-post-editor";
 import CommunityTopicSelector from "./community-topic-selector";
@@ -40,6 +41,8 @@ export default function CommunityPostForm() {
   }
 
   const router = useRouter();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("<p></p>");
 
@@ -88,6 +91,11 @@ export default function CommunityPostForm() {
   }, [content, selectedTopics.length, title]);
 
   const handleSaveDraft = React.useCallback(() => {
+    if (!isLoggedIn) {
+      openAuthDialog();
+      return;
+    }
+
     void (async () => {
       try {
         setSubmitting(true);
@@ -122,9 +130,14 @@ export default function CommunityPostForm() {
         setSubmitting(false);
       }
     })();
-  }, [content, draftId, selectedTopics, title]);
+  }, [isLoggedIn, openAuthDialog, content, draftId, selectedTopics, title]);
 
   const handlePublish = React.useCallback(() => {
+    if (!isLoggedIn) {
+      openAuthDialog();
+      return;
+    }
+
     void (async () => {
       const validationError = validate();
 
@@ -167,7 +180,7 @@ export default function CommunityPostForm() {
         setSubmitting(false);
       }
     })();
-  }, [content, draftId, router, selectedTopics, title, validate]);
+  }, [isLoggedIn, openAuthDialog, content, draftId, router, selectedTopics, title, validate]);
 
   const loadDrafts = React.useCallback(async () => {
     try {
@@ -441,16 +454,18 @@ export default function CommunityPostForm() {
             </div>
             <div className="rounded-xl border bg-muted/20 p-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <div className="text-base font-semibold text-foreground">{title.trim() || "标题预览"}</div>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {stripHtml(content) || "这里会显示正文预览，当前没有输入内容。"}
-                  </p>
+                  {stripHtml(content) ? (
+                    <div
+                      className="prose prose-sm max-w-none text-sm leading-6 text-muted-foreground [&_img]:max-w-full [&_img]:max-h-48 [&_img]:rounded-lg [&_img]:object-contain"
+                      dangerouslySetInnerHTML={{ __html: content }}
+                    />
+                  ) : (
+                    <p className="text-sm leading-6 text-muted-foreground">这里会显示正文预览，当前没有输入内容。</p>
+                  )}
                 </div>
-                <Button type="button" variant="ghost" size="sm" className="shrink-0 text-muted-foreground">
-                  <Eye className="size-4" />
-                  预览
-                </Button>
+                <Eye className="size-4 shrink-0 text-muted-foreground" />
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {selectedTopics.length > 0 ? (

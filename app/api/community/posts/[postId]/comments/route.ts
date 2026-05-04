@@ -1,47 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { computeHotScore, parseLimit, resolveCurrentUserId } from "@/lib/community/shared";
+import { computeHotScore, parseLimit, parseOffsetCursor, resolveCurrentUserId } from "@/lib/community/shared";
 import { enqueueCommunityPostCommentNotification } from "@/lib/community/notifications";
 
 interface RouteContext {
   params: Promise<{ postId: string }>;
 }
 
+function toCommentResponse(comment: {
+  id: string;
+  content: string;
+  authorId: string;
+  replyToCommentId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  author: { name: string | null };
+}) {
+  return {
+    id: comment.id,
+    content: comment.content,
+    authorId: comment.authorId,
+    replyToCommentId: comment.replyToCommentId,
+    createdAt: comment.createdAt.toISOString(),
+    updatedAt: comment.updatedAt.toISOString(),
+    author: {
+      nickname: comment.author.name ?? "匿名同学",
+      avatarUrl: "",
+    },
+  };
+}
+
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { postId } = await context.params;
-    const limit = parseLimit(request.nextUrl.searchParams.get("limit"), { defaultValue: 50, maxValue: 100 });
+    const offset = parseOffsetCursor(request.nextUrl.searchParams.get("offset"));
+    const limit = parseLimit(request.nextUrl.searchParams.get("limit"), { defaultValue: 20, maxValue: 50 });
 
-    const [post, comments] = await prisma.$transaction([
+    const [post, comments, total] = await prisma.$transaction([
       prisma.communityPost.findFirst({
-        where: {
-          id: postId,
-          status: "PUBLISHED",
-        },
-        select: {
-          id: true,
-        },
+        where: { id: postId, status: "PUBLISHED" },
+        select: { id: true },
       }),
       prisma.communityPostComment.findMany({
-        where: {
-          postId,
-          status: "VISIBLE",
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
+        where: { postId, status: "VISIBLE" },
+        orderBy: { createdAt: "asc" },
+        skip: offset,
         take: limit,
         select: {
           id: true,
           content: true,
+          authorId: true,
           replyToCommentId: true,
           createdAt: true,
-          author: {
-            select: {
-              name: true,
-            },
-          },
+          updatedAt: true,
+          author: { select: { name: true } },
         },
+      }),
+      prisma.communityPostComment.count({
+        where: { postId, status: "VISIBLE" },
       }),
     ]);
 
@@ -49,17 +65,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ message: "帖子不存在" }, { status: 404 });
     }
 
+    const nextOffset = offset + comments.length;
     return NextResponse.json({
-      items: comments.map((comment) => ({
-        id: comment.id,
-        content: comment.content,
-        replyToCommentId: comment.replyToCommentId,
-        createdAt: comment.createdAt.toISOString(),
-        author: {
-          nickname: comment.author.name ?? "匿名同学",
-          avatarUrl: "",
-        },
-      })),
+      items: comments.map(toCommentResponse),
+      hasMore: nextOffset < total,
+      nextOffset,
+      total,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "获取评论失败";
@@ -93,19 +104,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const result = await prisma.$transaction(async (tx) => {
       const post = await tx.communityPost.findFirst({
-        where: {
-          id: postId,
-          status: "PUBLISHED",
-        },
+        where: { id: postId, status: "PUBLISHED" },
         select: {
           id: true,
           title: true,
           authorId: true,
-          author: {
-            select: {
-              name: true,
-            },
-          },
+          author: { select: { name: true } },
           likeCount: true,
           commentCount: true,
           createdAt: true,
@@ -117,25 +121,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       }
 
       const actor = await tx.user.findUnique({
-        where: {
-          id: userId,
-        },
-        select: {
-          name: true,
-        },
+        where: { id: userId },
+        select: { name: true },
       });
 
       const replyToComment = replyToCommentId
         ? await tx.communityPostComment.findFirst({
-            where: {
-              id: replyToCommentId,
-              postId,
-              status: "VISIBLE",
-            },
-            select: {
-              id: true,
-              authorId: true,
-            },
+            where: { id: replyToCommentId, postId, status: "VISIBLE" },
+            select: { id: true, authorId: true },
           })
         : null;
 
@@ -153,13 +146,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
         select: {
           id: true,
           content: true,
+          authorId: true,
           replyToCommentId: true,
           createdAt: true,
-          author: {
-            select: {
-              name: true,
-            },
-          },
+          updatedAt: true,
+          author: { select: { name: true } },
         },
       });
 
@@ -175,16 +166,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       });
 
       return {
-        comment: {
-          id: comment.id,
-          content: comment.content,
-          replyToCommentId: comment.replyToCommentId,
-          createdAt: comment.createdAt.toISOString(),
-          author: {
-            nickname: comment.author.name ?? "匿名同学",
-            avatarUrl: "",
-          },
-        },
+        comment,
         commentCount: nextCommentCount,
         notification: {
           postId: post.id,
@@ -203,7 +185,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     return NextResponse.json({
-      comment: result.comment,
+      comment: toCommentResponse(result.comment),
       commentCount: result.commentCount,
     });
   } catch (error) {

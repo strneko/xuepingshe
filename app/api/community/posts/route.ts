@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { CommunityPostListItem } from "@/lib/community/types";
 import {
   computeHotScore,
+  extractImages,
   parseLimit,
   parseOffsetCursor,
   parseSort,
@@ -63,7 +64,7 @@ function toPostListItem(post: {
     updatedAt: post.updatedAt.toISOString(),
     lastReplyAt: post.lastReplyAt?.toISOString(),
     content: stripHtml(post.contentHtml),
-    images: [],
+    images: extractImages(post.contentHtml),
     tags: post.topics.map((item) => item.topic.name),
     likesCount: post.likeCount,
     isLiked: Boolean(post.likes?.length),

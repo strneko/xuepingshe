@@ -57,6 +57,16 @@ export function stripHtml(html: string) {
     .trim();
 }
 
+export function extractImages(html: string): string[] {
+  const images: string[] = [];
+  const regex = /<img[^>]+src="([^"]+)"/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(html)) !== null) {
+    images.push(match[1]);
+  }
+  return images;
+}
+
 export function computeHotScore(likeCount: number, commentCount: number, createdAt: Date) {
   const ageInHours = Math.max(1, (Date.now() - createdAt.getTime()) / (1000 * 60 * 60));
   const decay = Math.max(0, Math.round(24 - ageInHours));

@@ -37,6 +37,7 @@ model User {
   communityDrafts    CommunityDraft[]
   communityPostLikes CommunityPostLike[]
   communityComments  CommunityPostComment[]
+  communityReports   CommunityReport[]
   uploadSessions     ResourceUploadSession[]
   uploadedResources  CourseResource[]
   enrollments        Enrollment[]

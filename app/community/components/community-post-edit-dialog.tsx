@@ -126,7 +126,7 @@ export default function CommunityPostEditDialog({ post, open, onOpenChange, onSa
           <div className="space-y-2">
             <div className="text-sm font-medium text-foreground">当前话题</div>
             <div className="flex flex-wrap gap-2">
-              {post?.tags.length > 0 ? (
+              {post && post.tags.length > 0 ? (
                 post.tags.map((tag) => (
                   <Badge key={`${post.id}-${tag}`} variant="secondary" className="text-xs">
                     #{tag}

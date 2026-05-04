@@ -5,6 +5,7 @@ import { CommunityPost } from "@/app/community/_types";
 import { formatRelativeTime } from "@/lib/time/format-relative-time";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PhotoProvider, PhotoView } from "react-photo-view";
 
 type CommunityPostCardProps = {
   post: CommunityPost;
@@ -51,13 +52,25 @@ export default function CommunityPostCard({ post, liking = false, onToggleLike, 
         <p className="line-clamp-4 text-sm leading-6 text-foreground/90">{post.content}</p>
 
         {post.images.length > 0 ? (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {post.images.slice(0, 3).map((src) => (
-              <div key={src} className="overflow-hidden rounded-lg border bg-muted/20">
-                <img src={src} alt="帖子配图" className="h-36 w-full object-cover" loading="lazy" />
-              </div>
-            ))}
-          </div>
+          <PhotoProvider maskOpacity={0.5}>
+            <div
+              className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {post.images.slice(0, 3).map((src, index) => (
+                <PhotoView key={`${post.id}-${index}`} src={src}>
+                  <div className="overflow-hidden rounded-lg border bg-muted/20">
+                    <img
+                      src={src}
+                      alt="帖子配图"
+                      className="aspect-video w-full cursor-zoom-in object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </PhotoView>
+              ))}
+            </div>
+          </PhotoProvider>
         ) : null}
       </section>
 

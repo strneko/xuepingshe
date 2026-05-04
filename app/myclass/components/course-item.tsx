@@ -152,7 +152,9 @@ export function CourseCard({
         type="course"
         title={courseName}
         subtitle={`授课教师：${teacher}`}
-        department={`${location} · ${time} · ${term}`}
+        department={`${courseStatus === "OPEN" ? "开课中" : "已结课"} · ${location} · ${time} · ${term} · ${_credits} 学分`}
+        score={typeof recentScore === "number" ? recentScore : undefined}
+        reviewCount={reviewCount > 0 ? reviewCount : undefined}
         snippet={description}
         keyword={keyword}
         borderless
@@ -179,7 +181,6 @@ export function CourseCard({
                   <ListChecks className="size-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">课程近期评分</p>
               <p className="text-sm text-foreground">
                 <ScoreBox score={recentScore} digits={1} className="align-middle" />
                 <span className="ml-2 text-xs text-muted-foreground">{reviewCount} 条评价</span>
@@ -198,9 +199,6 @@ export function CourseCard({
                 ) : (
                   <span className="ml-1">暂未生成</span>
                 )}
-              </p>
-              <p className="text-[11px] text-muted-foreground">
-                {courseStatus === "OPEN" ? "开课中" : "已结课"} · 学期 {term}
               </p>
             </div>
           ) : (
@@ -228,10 +226,6 @@ export function CourseCard({
               <p className="inline-flex items-center gap-1 text-center text-xs text-muted-foreground whitespace-nowrap">
                 <Calendar className="size-3 shrink-0" />
                 截止：{deadline}
-              </p>
-
-              <p className="text-center text-[11px] text-muted-foreground">
-                {courseStatus === "OPEN" ? "开课中" : "已结课"} · 学期 {term}
               </p>
             </div>
           )

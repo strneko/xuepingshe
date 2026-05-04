@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -20,6 +20,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const showSearch = pathname !== "/" && pathname !== "/myclass";
   const user = useAuthStore((state) => state.user);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
 
@@ -27,14 +28,24 @@ export default function Navbar() {
     void initializeAuth();
   }, [initializeAuth]);
 
+  const handleAuthGate = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!isLoggedIn) {
+        e.preventDefault();
+        openAuthDialog();
+      }
+    },
+    [isLoggedIn, openAuthDialog],
+  );
+
   return (
     <nav className="sticky top-0 z-50 flex w-full h-16 px-[10vw] border-b shadow-sm items-center justify-between bg-background">
       <div className="justify-start items-center flex flex-row gap-6">
         <div>logo</div>
         <Link href="/">首页</Link>
         <Link href="/community">社区</Link>
-        <Link href="/myclass?unevaluated=true">我的课程</Link>
-        <Link href="/profile">个人中心</Link>
+        <Link href="/myclass?unevaluated=true" onClick={handleAuthGate}>我的课程</Link>
+        <Link href="/profile" onClick={handleAuthGate}>个人中心</Link>
       </div>
       {showSearch ? <SearchInput /> : <div />}
 

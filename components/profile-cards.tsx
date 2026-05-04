@@ -177,7 +177,7 @@ export default function ProfileCards() {
       {/* Account Info Card */}
       <Card>
         <CardHeader className={cn(editing && "pb-2")}>
-          <CardTitle className={cn("flex items-center", editing ? "flex-col gap-3" : "justify-between")}>
+          <CardTitle className="flex items-center justify-between">
             <span>账户资料</span>
             {editing ? (
               <div className="flex items-center gap-2">

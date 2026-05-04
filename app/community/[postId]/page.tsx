@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
-import { resolveOptionalCurrentUserId, stripHtml } from "@/lib/community/shared";
+import { extractImages, resolveOptionalCurrentUserId, stripHtml } from "@/lib/community/shared";
 import type { UserProfile } from "@/lib/stores/auth-store";
 import CommunityPostDetailShell from "../components/community-post-detail-shell";
 import { recordBrowseHistory } from "@/lib/profile/browse-history";
@@ -16,7 +16,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
   const headerStore = await headers();
   const userId = await resolveOptionalCurrentUserId(headerStore);
 
-  const [post, comments] = await prisma.$transaction([
+  const [post, comments, commentTotal] = await prisma.$transaction([
     prisma.communityPost.findFirst({
       where: {
         id: postId,
@@ -79,17 +79,25 @@ export default async function CommunityPostPage({ params }: PageProps) {
       orderBy: {
         createdAt: "asc",
       },
-      take: 100,
+      take: 20,
       select: {
         id: true,
         content: true,
+        authorId: true,
         replyToCommentId: true,
         createdAt: true,
+        updatedAt: true,
         author: {
           select: {
             name: true,
           },
         },
+      },
+    }),
+    prisma.communityPostComment.count({
+      where: {
+        postId,
+        status: "VISIBLE",
       },
     }),
   ]);
@@ -170,7 +178,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
     updatedAt: post.updatedAt.toISOString(),
     lastReplyAt: post.lastReplyAt?.toISOString(),
     content: stripHtml(post.contentHtml),
-    images: [],
+    images: extractImages(post.contentHtml),
     tags: post.topics.map((item) => item.topic.name),
     likesCount: post.likeCount,
     isLiked: Boolean(post.likes?.length),
@@ -197,13 +205,16 @@ export default async function CommunityPostPage({ params }: PageProps) {
         comments={comments.map((comment) => ({
           id: comment.id,
           content: comment.content,
+          authorId: comment.authorId,
           replyToCommentId: comment.replyToCommentId,
           createdAt: comment.createdAt.toISOString(),
+          updatedAt: comment.updatedAt.toISOString(),
           author: {
             nickname: comment.author.name ?? "匿名同学",
             avatarUrl: "",
           },
         }))}
+        hasMoreComments={commentTotal > 20}
         authorProfile={authorProfile}
         followingCount={followingCount}
         followerCount={followerCount}
