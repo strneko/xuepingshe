@@ -1,4 +1,8 @@
+import bcrypt from "bcryptjs";
+
 export async function seedCourseInviteCodes(prisma) {
+  const passwordHash = await bcrypt.hash("demo-user", 10);
+
   await prisma.user.upsert({
     where: { email: "demo-user@xuepingshe.local" },
     update: {
@@ -10,6 +14,7 @@ export async function seedCourseInviteCodes(prisma) {
       email: "demo-user@xuepingshe.local",
       name: "Demo User",
       role: "STUDENT",
+      passwordHash,
     },
   });
 

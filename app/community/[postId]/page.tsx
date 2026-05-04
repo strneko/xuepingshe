@@ -37,6 +37,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
           select: {
             id: true,
             name: true,
+            avatarUrl: true,
             role: true,
             points: true,
             _count: {
@@ -90,6 +91,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
         author: {
           select: {
             name: true,
+            avatarUrl: true,
           },
         },
       },
@@ -116,7 +118,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
     });
   }
 
-  const [likedSummary, followingLikes, followerLikes] = await Promise.all([
+  const [likedSummary, followingCount, followerCount, isFollowingAuthor] = await Promise.all([
     prisma.communityPost.aggregate({
       where: {
         authorId: post.author.id,
@@ -126,44 +128,30 @@ export default async function CommunityPostPage({ params }: PageProps) {
         likeCount: true,
       },
     }),
-    prisma.communityPostLike.findMany({
+    prisma.follow.count({
       where: {
-        userId: post.author.id,
-        post: {
-          status: "PUBLISHED",
-        },
+        followerId: post.author.id,
       },
-      select: {
-        post: {
-          select: {
-            authorId: true,
+    }),
+    prisma.follow.count({
+      where: {
+        followingId: post.author.id,
+      },
+    }),
+    userId && userId !== post.author.id
+      ? prisma.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId: userId,
+              followingId: post.author.id,
+            },
           },
-        },
-      },
-      take: 1000,
-    }),
-    prisma.communityPostLike.findMany({
-      where: {
-        post: {
-          authorId: post.author.id,
-          status: "PUBLISHED",
-        },
-      },
-      select: {
-        userId: true,
-      },
-      take: 2000,
-    }),
+          select: {
+            id: true,
+          },
+        })
+      : Promise.resolve(null),
   ]);
-
-  const followingCount = new Set(
-    followingLikes.map((item) => item.post.authorId).filter((authorId) => authorId && authorId !== post.author.id),
-  ).size;
-  const followerCount = new Set(
-    followerLikes
-      .map((item) => item.userId)
-      .filter((followerUserId) => followerUserId && followerUserId !== post.author.id),
-  ).size;
 
   const normalizedPost = {
     id: post.id,
@@ -172,7 +160,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
     contentHtml: post.contentHtml,
     author: {
       nickname: post.author.name ?? "匿名同学",
-      avatarUrl: "",
+      avatarUrl: post.author.avatarUrl ?? "",
     },
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
@@ -189,7 +177,7 @@ export default async function CommunityPostPage({ params }: PageProps) {
   const authorProfile: UserProfile = {
     id: post.author.id,
     nickname: post.author.name ?? "匿名同学",
-    avatarUrl: "",
+    avatarUrl: post.author.avatarUrl ?? "",
     role: post.author.role,
     reviewCount: (post.author._count.courseReviews ?? 0) + (post.author._count.teacherReviews ?? 0),
     likedCount: likedSummary._sum.likeCount ?? 0,
@@ -211,13 +199,14 @@ export default async function CommunityPostPage({ params }: PageProps) {
           updatedAt: comment.updatedAt.toISOString(),
           author: {
             nickname: comment.author.name ?? "匿名同学",
-            avatarUrl: "",
+            avatarUrl: comment.author.avatarUrl ?? "",
           },
         }))}
         hasMoreComments={commentTotal > 20}
         authorProfile={authorProfile}
         followingCount={followingCount}
         followerCount={followerCount}
+        authorFollowed={Boolean(isFollowingAuthor)}
       />
     </main>
   );

@@ -38,7 +38,9 @@ type BrowseHistoryDelegate = {
     where: { userId: string };
     orderBy: Array<{ visitedAt: "desc" } | { updatedAt: "desc" }>;
     take: number;
+    skip?: number;
   }) => Promise<BrowseHistoryEntry[]>;
+  count?: (args: { where: { userId: string } }) => Promise<number>;
 };
 
 function getBrowseHistoryDelegate() {
@@ -136,4 +138,61 @@ export async function listBrowseHistory(userId: string, limit = 100): Promise<Br
   `;
 
   return rows;
+}
+
+export async function listBrowseHistoryPaged(
+  userId: string,
+  offset: number,
+  limit: number,
+): Promise<BrowseHistoryEntry[]> {
+  const safeOffset = Math.max(0, offset);
+  const safeLimit = Math.max(1, limit);
+  const delegate = getBrowseHistoryDelegate();
+
+  if (delegate) {
+    return delegate.findMany({
+      where: {
+        userId,
+      },
+      orderBy: [{ visitedAt: "desc" }, { updatedAt: "desc" }],
+      skip: safeOffset,
+      take: safeLimit,
+    });
+  }
+
+  const rows = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      kind: BrowseHistoryKind;
+      targetId: string;
+      title: string;
+      href: string;
+      visitedAt: Date;
+    }>
+  >`
+    SELECT "id", "kind", "targetId", "title", "href", "visitedAt"
+    FROM "BrowseHistory"
+    WHERE "userId" = ${userId}
+    ORDER BY "visitedAt" DESC, "updatedAt" DESC
+    OFFSET ${safeOffset}
+    LIMIT ${safeLimit};
+  `;
+
+  return rows;
+}
+
+export async function countBrowseHistory(userId: string): Promise<number> {
+  const delegate = getBrowseHistoryDelegate();
+  if (delegate?.count) {
+    return delegate.count({ where: { userId } });
+  }
+
+  const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(1)::bigint as count
+    FROM "BrowseHistory"
+    WHERE "userId" = ${userId};
+  `;
+
+  const value = rows[0]?.count ?? BigInt(0);
+  return Number(value);
 }

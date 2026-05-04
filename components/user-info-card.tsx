@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserProfile, useAuthStore } from "@/lib/stores/auth-store";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface UserInfoCardProps {
   user: UserProfile | null;
@@ -13,6 +14,7 @@ interface UserInfoCardProps {
   hidePoints?: boolean;
   showFollowButton?: boolean;
   showMessageButton?: boolean;
+  initialFollowing?: boolean;
 }
 
 export default function UserInfoCard({
@@ -21,11 +23,24 @@ export default function UserInfoCard({
   hidePoints = false,
   showFollowButton = false,
   showMessageButton = false,
+  initialFollowing = false,
 }: UserInfoCardProps) {
   const router = useRouter();
   const openAuthDialog = useAuthStore((state) => state.openAuthDialog);
   const clearUser = useAuthStore((state) => state.clearUser);
-  const [isFollowing, setIsFollowing] = React.useState(false);
+  const currentUser = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const [isFollowing, setIsFollowing] = React.useState(initialFollowing);
+  const [followerCount, setFollowerCount] = React.useState(user?.followerCount ?? 0);
+  const [followLoading, setFollowLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsFollowing(initialFollowing);
+  }, [initialFollowing]);
+
+  React.useEffect(() => {
+    setFollowerCount(user?.followerCount ?? 0);
+  }, [user?.followerCount]);
 
   const handleProfileClick = () => {
     router.push("/profile");
@@ -41,6 +56,60 @@ export default function UserInfoCard({
 
   const handleLoginClick = () => {
     openAuthDialog();
+  };
+
+  const handleFollowToggle = async () => {
+    if (!user?.id) {
+      return;
+    }
+
+    if (!currentUser) {
+      openAuthDialog();
+      return;
+    }
+
+    if (currentUser.id === user.id || followLoading) {
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+      const response = await fetch("/api/profile/follow", {
+        method: isFollowing ? "DELETE" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ targetUserId: user.id }),
+      });
+
+      const data = (await response.json()) as {
+        isFollowing?: boolean;
+        followerCount?: number;
+        followingCount?: number;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        toast.error(data.message ?? "关注操作失败");
+        return;
+      }
+
+      setIsFollowing(Boolean(data.isFollowing));
+      if (typeof data.followerCount === "number") {
+        setFollowerCount(data.followerCount);
+      }
+
+      if (currentUser && typeof data.followingCount === "number") {
+        setUser({
+          ...currentUser,
+          followingCount: data.followingCount,
+        });
+      }
+    } catch {
+      toast.error("网络异常，请稍后重试");
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   return (
@@ -78,22 +147,23 @@ export default function UserInfoCard({
               {typeof user?.followerCount === "number" ? (
                 <div>
                   <p className="text-sm font-medium">
-                    {user.followerCount}
+                    {followerCount}
                     <span className="ml-1 text-[10px] font-normal text-muted-foreground">粉丝</span>
                   </p>
                 </div>
               ) : null}
             </div>
             {!hidePoints ? <p className="text-xs text-muted-foreground">积分: {user.points}</p> : null}
-            {showFollowButton ? (
+            {showFollowButton && user && currentUser?.id !== user.id ? (
               <div className="w-full space-y-2">
                 <Button
                   type="button"
                   variant={isFollowing ? "outline" : "default"}
                   className="w-full"
-                  onClick={() => setIsFollowing((value) => !value)}
+                  onClick={() => void handleFollowToggle()}
+                  disabled={followLoading}
                 >
-                  {isFollowing ? "已关注" : "+ 关注"}
+                  {followLoading ? "处理中..." : isFollowing ? "已关注" : "+ 关注"}
                 </Button>
                 {showMessageButton ? (
                   <Button type="button" variant="outline" className="w-full" onClick={() => router.push("/community")}>

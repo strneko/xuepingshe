@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "未登录" }, { status: 401 });
     }
 
-    return NextResponse.json({ user });
+    const response = NextResponse.json({ user });
+    response.headers.set("Cache-Control", "private, max-age=10, stale-while-revalidate=30");
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "获取登录态失败";
     return NextResponse.json({ message }, { status: 500 });

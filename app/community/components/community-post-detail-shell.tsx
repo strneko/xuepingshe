@@ -22,6 +22,7 @@ type CommunityPostDetailShellProps = {
   authorProfile: UserProfile;
   followingCount?: number;
   followerCount?: number;
+  authorFollowed?: boolean;
   onPostChange?: (post: CommunityPost) => void;
   onDeleted?: () => void;
 };
@@ -34,6 +35,7 @@ export default function CommunityPostDetailShell({
   authorProfile,
   followingCount,
   followerCount,
+  authorFollowed = false,
   onPostChange,
   onDeleted,
 }: CommunityPostDetailShellProps) {
@@ -80,10 +82,16 @@ export default function CommunityPostDetailShell({
   // --- Comment submission (top-level only, replies use inline box) ---
   const handleSubmitComment = React.useCallback(async () => {
     if (commentSubmitting) return;
-    if (!isLoggedIn) { openAuthDialog(); return; }
+    if (!isLoggedIn) {
+      openAuthDialog();
+      return;
+    }
 
     const content = commentValue.trim();
-    if (!content) { toast.error("评论内容不能为空"); return; }
+    if (!content) {
+      toast.error("评论内容不能为空");
+      return;
+    }
 
     setCommentSubmitting(true);
 
@@ -120,53 +128,62 @@ export default function CommunityPostDetailShell({
   }, [commentSubmitting, commentValue, isLoggedIn, openAuthDialog, post.id, setPost]);
 
   // --- Reply ---
-  const handleReplyClick = React.useCallback((comment: CommunityComment) => {
-    if (!isLoggedIn) {
-      openAuthDialog();
-      return;
-    }
-    setReplyTarget(comment);
-  }, [isLoggedIn, openAuthDialog]);
+  const handleReplyClick = React.useCallback(
+    (comment: CommunityComment) => {
+      if (!isLoggedIn) {
+        openAuthDialog();
+        return;
+      }
+      setReplyTarget(comment);
+    },
+    [isLoggedIn, openAuthDialog],
+  );
 
   const handleCancelReply = React.useCallback(() => {
     setReplyTarget(null);
   }, []);
 
-  const handleSubmitReply = React.useCallback(async (content: string, replyToCommentId: string) => {
-    if (!isLoggedIn) { openAuthDialog(); return; }
-    setReplySubmitting(true);
-
-    try {
-      const response = await fetch(`/api/community/posts/${post.id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, replyToCommentId }),
-      });
-
-      const data = (await response.json()) as {
-        message?: string;
-        comment?: CommunityComment;
-        commentCount?: number;
-      };
-
-      if (!response.ok) throw new Error(data.message ?? "评论失败");
-
-      if (data.comment) {
-        setCommentItems((current) => [...current, data.comment!]);
+  const handleSubmitReply = React.useCallback(
+    async (content: string, replyToCommentId: string) => {
+      if (!isLoggedIn) {
+        openAuthDialog();
+        return;
       }
-      if (typeof data.commentCount === "number") {
-        const nextCount = data.commentCount;
-        setPost((current) => ({ ...current, commentsCount: nextCount }));
-      }
+      setReplySubmitting(true);
 
-      setReplyTarget(null);
-      toast.success("回复已发布");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "回复失败");
-    } finally {
-      setReplySubmitting(false);
-    }
-  }, [isLoggedIn, openAuthDialog, post.id, setPost]);
+      try {
+        const response = await fetch(`/api/community/posts/${post.id}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, replyToCommentId }),
+        });
+
+        const data = (await response.json()) as {
+          message?: string;
+          comment?: CommunityComment;
+          commentCount?: number;
+        };
+
+        if (!response.ok) throw new Error(data.message ?? "评论失败");
+
+        if (data.comment) {
+          setCommentItems((current) => [...current, data.comment!]);
+        }
+        if (typeof data.commentCount === "number") {
+          const nextCount = data.commentCount;
+          setPost((current) => ({ ...current, commentsCount: nextCount }));
+        }
+
+        setReplyTarget(null);
+        toast.success("回复已发布");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "回复失败");
+      } finally {
+        setReplySubmitting(false);
+      }
+    },
+    [isLoggedIn, openAuthDialog, post.id, setPost],
+  );
 
   // --- Edit ---
   const handleEditClick = React.useCallback((comment: CommunityComment) => {
@@ -179,70 +196,76 @@ export default function CommunityPostDetailShell({
     setEditingContent("");
   }, []);
 
-  const handleSaveEdit = React.useCallback(async (commentId: string) => {
-    if (!editingContent.trim()) { toast.error("评论内容不能为空"); return; }
-    setEditSubmitting(true);
-
-    try {
-      const response = await fetch(`/api/community/posts/${post.id}/comments/${commentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: editingContent.trim() }),
-      });
-
-      const data = (await response.json()) as { message?: string; comment?: CommunityComment };
-
-      if (!response.ok) throw new Error(data.message ?? "编辑失败");
-
-      setEditingCommentId(null);
-      setEditingContent("");
-
-      if (data.comment) {
-        setCommentItems((current) =>
-          current.map((c) => (c.id === commentId ? data.comment! : c)),
-        );
+  const handleSaveEdit = React.useCallback(
+    async (commentId: string) => {
+      if (!editingContent.trim()) {
+        toast.error("评论内容不能为空");
+        return;
       }
-      toast.success("评论已更新");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "编辑失败");
-    } finally {
-      setEditSubmitting(false);
-    }
-  }, [editingContent, post.id]);
+      setEditSubmitting(true);
+
+      try {
+        const response = await fetch(`/api/community/posts/${post.id}/comments/${commentId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: editingContent.trim() }),
+        });
+
+        const data = (await response.json()) as { message?: string; comment?: CommunityComment };
+
+        if (!response.ok) throw new Error(data.message ?? "编辑失败");
+
+        setEditingCommentId(null);
+        setEditingContent("");
+
+        if (data.comment) {
+          setCommentItems((current) => current.map((c) => (c.id === commentId ? data.comment! : c)));
+        }
+        toast.success("评论已更新");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "编辑失败");
+      } finally {
+        setEditSubmitting(false);
+      }
+    },
+    [editingContent, post.id],
+  );
 
   // --- Delete ---
-  const handleDeleteComment = React.useCallback(async (commentId: string) => {
-    const shouldDelete = window.confirm("确认删除这条评论吗？");
-    if (!shouldDelete) return;
+  const handleDeleteComment = React.useCallback(
+    async (commentId: string) => {
+      const shouldDelete = window.confirm("确认删除这条评论吗？");
+      if (!shouldDelete) return;
 
-    try {
-      const response = await fetch(`/api/community/posts/${post.id}/comments/${commentId}`, {
-        method: "DELETE",
-      });
+      try {
+        const response = await fetch(`/api/community/posts/${post.id}/comments/${commentId}`, {
+          method: "DELETE",
+        });
 
-      const data = (await response.json()) as { message?: string };
+        const data = (await response.json()) as { message?: string };
 
-      if (!response.ok) throw new Error(data.message ?? "删除失败");
+        if (!response.ok) throw new Error(data.message ?? "删除失败");
 
-      setCommentItems((current) => current.filter((c) => c.id !== commentId));
-      setPost((current) => ({
-        ...current,
-        commentsCount: Math.max(0, current.commentsCount - 1),
-      }));
-      toast.success("评论已删除");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "删除失败");
-    }
-  }, [post.id, setPost]);
+        setCommentItems((current) => current.filter((c) => c.id !== commentId));
+        setPost((current) => ({
+          ...current,
+          commentsCount: Math.max(0, current.commentsCount - 1),
+        }));
+        toast.success("评论已删除");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "删除失败");
+      }
+    },
+    [post.id, setPost],
+  );
 
   // --- Load more ---
   const handleLoadMoreComments = React.useCallback(async () => {
     setCommentsLoadingMore(true);
     try {
-      const response = await fetch(
-        `/api/community/posts/${post.id}/comments?offset=${commentItems.length}&limit=20`,
-        { method: "GET" },
-      );
+      const response = await fetch(`/api/community/posts/${post.id}/comments?offset=${commentItems.length}&limit=20`, {
+        method: "GET",
+      });
 
       const data = (await response.json()) as {
         items?: CommunityComment[];
@@ -388,7 +411,14 @@ export default function CommunityPostDetailShell({
 
       <aside className="hidden lg:block">
         <div className="sticky top-8">
-          <UserInfoCard user={authorProfile} hideActions hidePoints showFollowButton showMessageButton />
+          <UserInfoCard
+            user={authorProfile}
+            hideActions
+            hidePoints
+            showFollowButton
+            showMessageButton
+            initialFollowing={authorFollowed}
+          />
         </div>
       </aside>
     </div>

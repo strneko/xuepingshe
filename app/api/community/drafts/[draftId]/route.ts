@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       data: {
         ...(title !== undefined ? { title } : {}),
         ...(contentHtml !== undefined ? { contentHtml } : {}),
-        ...(contentJson !== undefined ? { contentJson } : {}),
+        ...(contentJson !== undefined && contentJson !== null ? { contentJson } : {}),
         ...(topicNames !== undefined ? { topicNames } : {}),
       },
     });

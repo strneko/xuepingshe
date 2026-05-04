@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
       isActive: true,
     },
     orderBy: [{ rankScore: "desc" }, { createdAt: "desc" }],
+    take: 20,
     select: {
       reviewId: true,
       nickname: true,
@@ -44,10 +45,12 @@ export async function GET(request: NextRequest) {
     likedReviewIdSet = new Set(likedRows.map((item) => item.reviewId));
   }
 
-  return NextResponse.json(
+  const response = NextResponse.json(
     reviews.map((review) => ({
       ...toRecommendedReviewItem(review),
       liked: likedReviewIdSet.has(review.reviewId),
     })),
   );
+  response.headers.set("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+  return response;
 }

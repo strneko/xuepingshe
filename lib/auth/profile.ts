@@ -1,14 +1,16 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
 import type { UserProfile } from "@/lib/stores/auth-store";
 
-export async function buildUserProfile(userId: string): Promise<UserProfile | null> {
-  const [user, likedSummary, followingLikes, followerLikes] = await Promise.all([
+export const buildUserProfile = cache(async (userId: string): Promise<UserProfile | null> => {
+  const [user, likedSummary, followingCount, followerCount] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         name: true,
+        avatarUrl: true,
         role: true,
         points: true,
         _count: {
@@ -28,39 +30,14 @@ export async function buildUserProfile(userId: string): Promise<UserProfile | nu
         likeCount: true,
       },
     }),
-    prisma.communityPostLike.findMany({
+    prisma.follow.count({
       where: {
-        userId,
-        post: {
-          status: "PUBLISHED",
-        },
-      },
-      select: {
-        post: {
-          select: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
+        followerId: userId,
       },
     }),
-    prisma.communityPostLike.findMany({
+    prisma.follow.count({
       where: {
-        post: {
-          authorId: userId,
-          status: "PUBLISHED",
-        },
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-          },
-        },
+        followingId: userId,
       },
     }),
   ]);
@@ -69,19 +46,10 @@ export async function buildUserProfile(userId: string): Promise<UserProfile | nu
     return null;
   }
 
-  const followingCount = new Set(
-    followingLikes
-      .map((item) => item.post.author)
-      .filter((author) => Boolean(author.name?.trim()))
-      .map((author) => author.id),
-  ).size;
-
-  const followerCount = new Set(followerLikes.map((item) => item.user.id)).size;
-
   return {
     id: user.id,
     nickname: user.name ?? "匿名同学",
-    avatarUrl: "",
+    avatarUrl: user.avatarUrl ?? undefined,
     role: user.role,
     reviewCount: (user._count.courseReviews ?? 0) + (user._count.teacherReviews ?? 0),
     likedCount: likedSummary._sum.likeCount ?? 0,
@@ -89,4 +57,4 @@ export async function buildUserProfile(userId: string): Promise<UserProfile | nu
     followerCount,
     points: user.points,
   };
-}
+});

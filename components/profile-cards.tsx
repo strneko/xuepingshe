@@ -10,13 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -52,13 +46,37 @@ interface AccountData {
   teacherProfile: TeacherProfileData | null;
 }
 
-const TITLE_OPTIONS = ["教授", "副教授", "讲师", "助理教授", "研究员", "副研究员"] as const;
+interface ProfileCardsProps {
+  defaultEditing?: boolean;
+}
 
-export default function ProfileCards() {
+const TITLE_OPTIONS = ["教授", "副教授", "讲师", "助理教授", "研究员", "副研究员"] as const;
+const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
+const AVATAR_ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const AVATAR_COURSE_PREFIX = "avatar";
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+async function sha256Hex(buffer: ArrayBuffer) {
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  const bytes = new Uint8Array(digest);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export default function ProfileCards({ defaultEditing = false }: ProfileCardsProps) {
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(defaultEditing);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [nickname, setNickname] = useState("");
   const [teacherName, setTeacherName] = useState("");
@@ -71,6 +89,20 @@ export default function ProfileCards() {
   const [teacherDialogOpen, setTeacherDialogOpen] = useState(false);
   const [teacherCode, setTeacherCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [avatarFile]);
 
   useEffect(() => {
     fetch("/api/account", { cache: "no-store" })
@@ -125,15 +157,124 @@ export default function ProfileCards() {
     }
   };
 
+  const validateAvatarFile = (file: File) => {
+    if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+      return "头像仅支持 PNG/JPEG/WEBP/GIF 格式";
+    }
+    if (file.size > AVATAR_MAX_SIZE) {
+      return `头像大小需小于 ${formatFileSize(AVATAR_MAX_SIZE)}`;
+    }
+    return null;
+  };
+
+  const uploadAvatarResource = async (file: File) => {
+    const courseId = `${AVATAR_COURSE_PREFIX}-${data?.id ?? ""}`;
+    const fileBuffer = await file.arrayBuffer();
+    const wholeHash = await sha256Hex(fileBuffer);
+    const chunkHash = wholeHash;
+
+    const initResponse = await fetch("/api/resources/upload/init", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        courseId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        wholeFileHash: wholeHash,
+        chunkSize: file.size,
+        totalChunks: 1,
+      }),
+    });
+
+    if (!initResponse.ok) {
+      throw new Error(`初始化上传失败(${initResponse.status})`);
+    }
+
+    const initData = (await initResponse.json()) as {
+      code?: "INSTANT_SUCCESS" | "UPLOAD_REQUIRED";
+      resourceId?: string;
+      uploadId?: string;
+    };
+
+    if (initData.code === "INSTANT_SUCCESS" && initData.resourceId) {
+      return initData.resourceId;
+    }
+
+    if (!initData.uploadId) {
+      throw new Error("上传会话无效");
+    }
+
+    const partResponse = await fetch("/api/resources/upload/part", {
+      method: "POST",
+      headers: {
+        "Upload-Id": initData.uploadId,
+        "Part-Number": "1",
+        "Chunk-Hash": chunkHash,
+        "Content-Length": String(file.size),
+      },
+      body: file,
+    });
+
+    if (!partResponse.ok) {
+      throw new Error(`分片上传失败(${partResponse.status})`);
+    }
+
+    const completeResponse = await fetch(`/api/resources/upload/${initData.uploadId}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uploadedPartsMeta: [{ partNumber: 1, chunkHash }],
+      }),
+    });
+
+    if (!completeResponse.ok) {
+      throw new Error(`合并上传失败(${completeResponse.status})`);
+    }
+
+    const completeData = (await completeResponse.json()) as { resourceId?: string };
+    if (!completeData.resourceId) {
+      throw new Error("上传未完成");
+    }
+
+    return completeData.resourceId;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
+      if (!data) {
+        return;
+      }
+
+      let avatarResourceId: string | undefined;
+      if (avatarFile) {
+        const error = validateAvatarFile(avatarFile);
+        if (error) {
+          toast.error(error);
+          return;
+        }
+
+        setAvatarUploading(true);
+        try {
+          avatarResourceId = await uploadAvatarResource(avatarFile);
+        } finally {
+          setAvatarUploading(false);
+        }
+      }
+
       const body: Record<string, unknown> = { nickname };
+      if (avatarResourceId) {
+        body.avatarResourceId = avatarResourceId;
+      }
       if (data?.role === "TEACHER") {
         body.teacherName = teacherName;
         body.department = department;
         body.title = title;
-        body.researchAreas = researchAreasStr.split(/[,，、]/).map((s) => s.trim()).filter(Boolean);
+        body.researchAreas = researchAreasStr
+          .split(/[,，、]/)
+          .map((s) => s.trim())
+          .filter(Boolean);
         body.office = office;
         body.description = description;
       }
@@ -152,6 +293,20 @@ export default function ProfileCards() {
 
       toast.success(json.message ?? "资料已更新");
       setData(json);
+      if (json.id) {
+        useAuthStore.getState().setUser({
+          id: json.id,
+          nickname: json.nickname,
+          avatarUrl: json.avatarUrl ?? undefined,
+          role: json.role,
+          reviewCount: json.reviewCount,
+          likedCount: json.likedCount,
+          followingCount: json.followingCount,
+          followerCount: json.followerCount,
+          points: json.points,
+        });
+      }
+      setAvatarFile(null);
       setEditing(false);
     } catch {
       toast.error("网络异常，请稍后重试");
@@ -161,7 +316,57 @@ export default function ProfileCards() {
   };
 
   if (loading) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return (
+      <div className="space-y-4">
+        {/* Account Info Card Skeleton */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-8 w-[72px]" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-12 rounded-full" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+            <Skeleton className="h-px w-full" />
+            <div className="grid grid-cols-4 gap-1 text-center">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-3 w-6" />
+                </div>
+              ))}
+            </div>
+            <Skeleton className="h-px w-full" />
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-8" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Teacher Profile Card Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-20" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-1">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-5 w-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!data) {
@@ -181,11 +386,19 @@ export default function ProfileCards() {
             <span>账户资料</span>
             {editing ? (
               <div className="flex items-center gap-2">
-                <Button type="button" variant="destructive" size="sm" onClick={() => setEditing(false)}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setEditing(false);
+                    setAvatarFile(null);
+                  }}
+                >
                   取消编辑
                 </Button>
-                <Button type="button" size="sm" onClick={() => void handleSave()} disabled={saving}>
-                  {saving ? "保存中..." : "保存修改"}
+                <Button type="button" size="sm" onClick={() => void handleSave()} disabled={saving || avatarUploading}>
+                  {avatarUploading ? "上传中..." : saving ? "保存中..." : "保存修改"}
                 </Button>
               </div>
             ) : (
@@ -198,7 +411,7 @@ export default function ProfileCards() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
             <Avatar className="size-12">
-              <AvatarImage src={data.avatarUrl ?? ""} alt={data.nickname} />
+              <AvatarImage src={avatarPreview ?? data.avatarUrl ?? ""} alt={data.nickname} />
               <AvatarFallback>{data.nickname.slice(0, 2)}</AvatarFallback>
             </Avatar>
             <div>
@@ -211,6 +424,28 @@ export default function ProfileCards() {
               <p className="text-xs text-muted-foreground">积分: {data.points}</p>
             </div>
           </div>
+
+          {editing ? (
+            <div className="space-y-2">
+              <Label htmlFor="avatarUpload" className="text-xs">
+                头像
+              </Label>
+              <Input
+                id="avatarUpload"
+                type="file"
+                accept={AVATAR_ALLOWED_TYPES.join(",")}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setAvatarFile(file);
+                }}
+              />
+              {avatarFile ? (
+                <p className="text-xs text-muted-foreground">
+                  已选择：{avatarFile.name}（{formatFileSize(avatarFile.size)}）
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <Separator />
 
@@ -231,7 +466,9 @@ export default function ProfileCards() {
           <Separator />
 
           <div className="space-y-1">
-            <Label htmlFor="pnickname" className="text-xs">昵称</Label>
+            <Label htmlFor="pnickname" className="text-xs">
+              昵称
+            </Label>
             {editing ? (
               <Input id="pnickname" value={nickname} onChange={(e) => setNickname(e.target.value)} />
             ) : (
@@ -251,37 +488,61 @@ export default function ProfileCards() {
             {editing ? (
               <>
                 <div className="space-y-1">
-                  <Label htmlFor="pteacherName" className="text-xs">真实姓名</Label>
+                  <Label htmlFor="pteacherName" className="text-xs">
+                    真实姓名
+                  </Label>
                   <Input id="pteacherName" value={teacherName} onChange={(e) => setTeacherName(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="pdepartment" className="text-xs">院系</Label>
+                  <Label htmlFor="pdepartment" className="text-xs">
+                    院系
+                  </Label>
                   <Input id="pdepartment" value={department} onChange={(e) => setDepartment(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="ptitle" className="text-xs">职称</Label>
+                  <Label htmlFor="ptitle" className="text-xs">
+                    职称
+                  </Label>
                   <Select value={title} onValueChange={setTitle}>
                     <SelectTrigger id="ptitle" className="w-full">
                       <SelectValue placeholder="请选择职称" />
                     </SelectTrigger>
                     <SelectContent>
                       {TITLE_OPTIONS.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="presearchAreas" className="text-xs">研究方向</Label>
-                  <Input id="presearchAreas" value={researchAreasStr} onChange={(e) => setResearchAreasStr(e.target.value)} placeholder="逗号或顿号分隔" />
+                  <Label htmlFor="presearchAreas" className="text-xs">
+                    研究方向
+                  </Label>
+                  <Input
+                    id="presearchAreas"
+                    value={researchAreasStr}
+                    onChange={(e) => setResearchAreasStr(e.target.value)}
+                    placeholder="逗号或顿号分隔"
+                  />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="poffice" className="text-xs">办公室</Label>
+                  <Label htmlFor="poffice" className="text-xs">
+                    办公室
+                  </Label>
                   <Input id="poffice" value={office} onChange={(e) => setOffice(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="pdescription" className="text-xs">个人简介</Label>
-                  <Textarea id="pdescription" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+                  <Label htmlFor="pdescription" className="text-xs">
+                    个人简介
+                  </Label>
+                  <Textarea
+                    id="pdescription"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                  />
                 </div>
               </>
             ) : (
@@ -291,7 +552,11 @@ export default function ProfileCards() {
                 <p className="text-muted-foreground">职称：{title || "未填写"}</p>
                 <p className="text-muted-foreground">研究方向：{researchAreasStr || "未填写"}</p>
                 <p className="text-muted-foreground">办公室：{office || "未填写"}</p>
-                {description ? <p className="text-muted-foreground leading-5">{description}</p> : <p className="text-muted-foreground italic text-xs">个人简介未填写</p>}
+                {description ? (
+                  <p className="text-muted-foreground leading-5">{description}</p>
+                ) : (
+                  <p className="text-muted-foreground italic text-xs">个人简介未填写</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -319,13 +584,21 @@ export default function ProfileCards() {
               id="pteacher-code"
               value={teacherCode}
               onChange={(e) => setTeacherCode(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") void handleBecomeTeacher(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleBecomeTeacher();
+              }}
               placeholder="请输入教师码"
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setTeacherDialogOpen(false)}>取消</Button>
-            <Button type="button" onClick={() => void handleBecomeTeacher()} disabled={isSubmitting || !teacherCode.trim()}>
+            <Button type="button" variant="outline" onClick={() => setTeacherDialogOpen(false)}>
+              取消
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleBecomeTeacher()}
+              disabled={isSubmitting || !teacherCode.trim()}
+            >
               {isSubmitting ? "验证中..." : "确认认证"}
             </Button>
           </DialogFooter>

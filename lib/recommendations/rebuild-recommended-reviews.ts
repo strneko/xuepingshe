@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const AUTO_BATCH_KEY = "auto-generated";
 const DEFAULT_RECOMMENDATION_LIMIT = 6;
@@ -24,11 +25,15 @@ function scoreReview(createdAt: Date, likesCount: number, overallScore: number |
 }
 
 export async function rebuildRecommendedReviews(limit = DEFAULT_RECOMMENDATION_LIMIT) {
+  const MAX_CANDIDATES = 500;
+
   const [courseReviews, teacherReviews, courseProfiles, teacherProfiles] = await Promise.all([
     prisma.courseReview.findMany({
       where: {
         status: "VISIBLE",
       },
+      orderBy: [{ likesCount: "desc" }, { createdAt: "desc" }],
+      take: MAX_CANDIDATES,
       select: {
         id: true,
         courseId: true,
@@ -44,6 +49,8 @@ export async function rebuildRecommendedReviews(limit = DEFAULT_RECOMMENDATION_L
       where: {
         status: "VISIBLE",
       },
+      orderBy: [{ likesCount: "desc" }, { createdAt: "desc" }],
+      take: MAX_CANDIDATES,
       select: {
         id: true,
         teacherId: true,
@@ -153,7 +160,7 @@ export async function rebuildRecommendedReviews(limit = DEFAULT_RECOMMENDATION_L
           overallScore: candidate.overallScore,
           likesCount: candidate.likesCount,
           summary: candidate.summary,
-          detailedScoresJson: candidate.detailedScoresJson,
+          detailedScoresJson: candidate.detailedScoresJson as Prisma.InputJsonValue,
           rankScore: candidate.rankScore,
           isActive: true,
           batchKey: AUTO_BATCH_KEY,
@@ -169,7 +176,7 @@ export async function rebuildRecommendedReviews(limit = DEFAULT_RECOMMENDATION_L
           overallScore: candidate.overallScore,
           likesCount: candidate.likesCount,
           summary: candidate.summary,
-          detailedScoresJson: candidate.detailedScoresJson,
+          detailedScoresJson: candidate.detailedScoresJson as Prisma.InputJsonValue,
           rankScore: candidate.rankScore,
           isActive: true,
           batchKey: AUTO_BATCH_KEY,

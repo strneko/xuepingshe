@@ -30,7 +30,7 @@ interface NotificationStoreState {
   latestEventId: string | null;
   lastPushedNotification: NotificationPushEvent | null;
   initialize: (limit?: number) => Promise<void>;
-  connectStream: () => void;
+  connectStream: (options?: { skipSubscribe?: boolean }) => void;
   disconnectStream: () => void;
   markRead: (notificationId: string) => Promise<boolean>;
   markAllRead: () => Promise<boolean>;
@@ -44,8 +44,73 @@ function scheduleReconnect() {
 
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
-    useNotificationStore.getState().connectStream();
+    if (subscriberCount === 0) {
+      return;
+    }
+    useNotificationStore.getState().connectStream({ skipSubscribe: true });
   }, 2000);
+}
+
+function openStream(
+  set: (
+    partial: Partial<NotificationStoreState> | ((state: NotificationStoreState) => Partial<NotificationStoreState>),
+  ) => void,
+) {
+  if (eventSource) {
+    return;
+  }
+
+  eventSource = new EventSource("/api/notifications/stream");
+
+  eventSource.addEventListener("notification", (event) => {
+    const payload = JSON.parse((event as MessageEvent<string>).data) as NotificationPushEvent;
+
+    set((state) => {
+      const nextItem: NotificationItem = {
+        id: payload.notificationId,
+        eventId: payload.eventId,
+        eventType: payload.eventType,
+        title: payload.title,
+        summary: payload.summary,
+        href: payload.href,
+        payload: payload.payload,
+        createdAt: payload.createdAt,
+        isRead: false,
+      };
+
+      const items = mergeUniqueItems([nextItem, ...state.items]);
+
+      return {
+        items,
+        unreadCount: Number(payload.unreadCount ?? state.unreadCount),
+        latestEventId: payload.eventId,
+        lastPushedNotification: payload,
+      };
+    });
+  });
+
+  eventSource.addEventListener("unread-count", (event) => {
+    const payload = JSON.parse((event as MessageEvent<string>).data) as { unreadCount: number };
+    set({ unreadCount: Number(payload.unreadCount ?? 0) });
+  });
+
+  eventSource.addEventListener("notification-deleted", (event) => {
+    const payload = JSON.parse((event as MessageEvent<string>).data) as {
+      notificationId: string;
+      unreadCount: number;
+    };
+
+    set((state) => ({
+      unreadCount: Number(payload.unreadCount ?? state.unreadCount),
+      items: state.items.filter((item) => item.id !== payload.notificationId),
+    }));
+  });
+
+  eventSource.onerror = () => {
+    eventSource?.close();
+    eventSource = null;
+    scheduleReconnect();
+  };
 }
 
 export const useNotificationStore = create<NotificationStoreState>((set, get) => ({
@@ -88,64 +153,12 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
 
     return initPromise;
   },
-  connectStream() {
-    subscriberCount += 1;
-
-    if (eventSource) {
-      return;
+  connectStream(options?: { skipSubscribe?: boolean }) {
+    if (!options?.skipSubscribe) {
+      subscriberCount += 1;
     }
 
-    eventSource = new EventSource("/api/notifications/stream");
-
-    eventSource.addEventListener("notification", (event) => {
-      const payload = JSON.parse((event as MessageEvent<string>).data) as NotificationPushEvent;
-
-      set((state) => {
-        const nextItem: NotificationItem = {
-          id: payload.notificationId,
-          eventId: payload.eventId,
-          eventType: payload.eventType,
-          title: payload.title,
-          summary: payload.summary,
-          href: payload.href,
-          payload: payload.payload,
-          createdAt: payload.createdAt,
-          isRead: false,
-        };
-
-        const items = mergeUniqueItems([nextItem, ...state.items]);
-
-        return {
-          items,
-          unreadCount: Number(payload.unreadCount ?? state.unreadCount),
-          latestEventId: payload.eventId,
-          lastPushedNotification: payload,
-        };
-      });
-    });
-
-    eventSource.addEventListener("unread-count", (event) => {
-      const payload = JSON.parse((event as MessageEvent<string>).data) as { unreadCount: number };
-      set({ unreadCount: Number(payload.unreadCount ?? 0) });
-    });
-
-    eventSource.addEventListener("notification-deleted", (event) => {
-      const payload = JSON.parse((event as MessageEvent<string>).data) as {
-        notificationId: string;
-        unreadCount: number;
-      };
-
-      set((state) => ({
-        unreadCount: Number(payload.unreadCount ?? state.unreadCount),
-        items: state.items.filter((item) => item.id !== payload.notificationId),
-      }));
-    });
-
-    eventSource.onerror = () => {
-      eventSource?.close();
-      eventSource = null;
-      scheduleReconnect();
-    };
+    openStream(set);
   },
   disconnectStream() {
     subscriberCount = Math.max(0, subscriberCount - 1);

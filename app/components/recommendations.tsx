@@ -10,7 +10,7 @@ export default function Recommendations() {
   const { likingReviewId, toggleLike } = useRecommendedReviewLike({ setReviews });
 
   const fetchReviews = React.useCallback(async () => {
-    const response = await fetch("/api/reviews/recommended", { method: "GET", cache: "no-store" });
+    const response = await fetch("/api/reviews/recommended", { method: "GET" });
     if (!response.ok) {
       throw new Error("加载失败");
     }

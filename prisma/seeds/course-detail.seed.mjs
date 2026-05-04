@@ -1,3 +1,5 @@
+import bcrypt from "bcryptjs";
+
 export async function seedCourseDetail(prisma) {
   await seedDemoUser(prisma);
   await seedCourseProfiles(prisma);
@@ -81,6 +83,7 @@ async function seedCourseAnnouncements(prisma) {
 }
 
 async function seedDemoUser(prisma) {
+  const passwordHash = await bcrypt.hash("demo-user", 10);
   await prisma.user.upsert({
     where: { id: "demo-user" },
     update: {
@@ -91,6 +94,7 @@ async function seedDemoUser(prisma) {
       id: "demo-user",
       email: "demo-user@xuepingshe.local",
       name: "Demo User",
+      passwordHash,
     },
   });
 }

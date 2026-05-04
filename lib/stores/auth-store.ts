@@ -34,12 +34,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    const response = await fetch("/api/auth/me", {
-      cache: "no-store",
-    });
+    const response = await fetch("/api/auth/me");
 
     if (!response.ok) {
-      set({ initialized: true });
+      set({
+        initialized: true,
+        isLoggedIn: false,
+        user: null,
+        authDialogOpen: response.status === 401,
+      });
       return;
     }
 

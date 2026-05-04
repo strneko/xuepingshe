@@ -7,6 +7,7 @@ export type UserRecordTab = "view" | "review" | "post" | "comment" | "liked" | "
 
 interface RecordTabsProps {
   activeTab: UserRecordTab;
+  pageByTab?: Partial<Record<UserRecordTab, number>>;
 }
 
 const TAB_OPTIONS: { key: UserRecordTab; label: string }[] = [
@@ -19,7 +20,7 @@ const TAB_OPTIONS: { key: UserRecordTab; label: string }[] = [
   { key: "followers", label: "我的粉丝" },
 ];
 
-export default function RecordTabs({ activeTab }: RecordTabsProps) {
+export default function RecordTabs({ activeTab, pageByTab }: RecordTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -27,7 +28,12 @@ export default function RecordTabs({ activeTab }: RecordTabsProps) {
   const changeTab = (tab: UserRecordTab) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", tab);
-    params.delete("page");
+    const nextPage = pageByTab?.[tab] ?? 1;
+    if (nextPage <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(nextPage));
+    }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
   };
