@@ -5,10 +5,10 @@ enum ShopRedeemStatus {
 
 model ShopProduct {
   id         String   @id @default(cuid())
-  code       String   @unique
   name       String
   needPoints Int
   coverText  String?
+  imageUrl   String?
   stock      Int?
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
