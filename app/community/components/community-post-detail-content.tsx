@@ -132,7 +132,7 @@ function CommentNode({
         <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>{item.author.nickname}</span>
           <span>
-            {item.updatedAt !== item.createdAt
+            {new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime() > 1000
               ? `编辑于 ${formatRelativeTime(item.updatedAt)}`
               : formatRelativeTime(item.createdAt)}
           </span>
@@ -313,7 +313,7 @@ export default function CommunityPostDetailContent({
   onDeleteComment = () => {},
   onLoadMoreComments = () => {},
 }: CommunityPostDetailContentProps) {
-  const isEdited = post.updatedAt !== post.createdAt;
+  const isEdited = new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 1000;
   const timeText = isEdited
     ? `编辑于 ${formatRelativeTime(post.updatedAt)}`
     : `发布于 ${formatRelativeTime(post.createdAt)}`;

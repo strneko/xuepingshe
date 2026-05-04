@@ -90,6 +90,12 @@ export default function ProfileCards({ defaultEditing = false }: ProfileCardsPro
   const [teacherCode, setTeacherCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+
   useEffect(() => {
     if (!avatarFile) {
       setAvatarPreview(null);
@@ -315,6 +321,44 @@ export default function ProfileCards({ defaultEditing = false }: ProfileCardsPro
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword) {
+      toast.error("请填写旧密码和新密码");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("新密码长度至少为6个字符");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("两次输入的新密码不一致");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await fetch("/api/account/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { message?: string };
+      if (!res.ok) {
+        toast.error(json.message ?? "修改密码失败");
+        return;
+      }
+      toast.success(json.message ?? "密码修改成功");
+      setShowChangePassword(false);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      toast.error("网络异常，请稍后重试");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -475,6 +519,77 @@ export default function ProfileCards({ defaultEditing = false }: ProfileCardsPro
               <p className="text-sm">{data.nickname}</p>
             )}
           </div>
+
+          <Separator />
+
+          {showChangePassword ? (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="poldPassword" className="text-xs">旧密码</Label>
+                <Input
+                  id="poldPassword"
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="请输入旧密码"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="pnewPassword" className="text-xs">新密码</Label>
+                <Input
+                  id="pnewPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="至少6个字符"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="pconfirmPassword" className="text-xs">确认新密码</Label>
+                <Input
+                  id="pconfirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="再次输入新密码"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void handleChangePassword()}
+                  disabled={changingPassword}
+                >
+                  {changingPassword ? "修改中..." : "确认修改"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowChangePassword(false);
+                    setOldPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  disabled={changingPassword}
+                >
+                  取消
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowChangePassword(true)}
+            >
+              修改密码
+            </Button>
+          )}
         </CardContent>
       </Card>
 

@@ -30,6 +30,8 @@ export interface GetMyClassCoursesInput {
   keyword?: string;
   page?: number;
   pageSize?: number;
+  admin?: boolean;
+  semesterKey?: string;
 }
 
 export interface GetMyClassCoursesResult {
@@ -232,6 +234,10 @@ export async function getMyClassCourses(input: GetMyClassCoursesInput): Promise<
     return { items: [], total: 0, currentPage: 1, totalPages: 1 };
   }
 
+  if (input.admin) {
+    return getAdminAllOfferings({ semesterKey: input.semesterKey, keyword, sort, pageSize, page: input.page });
+  }
+
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true, name: true },
@@ -242,6 +248,104 @@ export async function getMyClassCourses(input: GetMyClassCoursesInput): Promise<
   }
 
   return getStudentCourses({ userId, keyword, onlyUnevaluated, sort, pageSize, page: input.page });
+}
+
+async function getAdminAllOfferings(params: {
+  semesterKey?: string;
+  keyword: string;
+  sort: "asc" | "desc";
+  pageSize: number;
+  page: number | undefined;
+}): Promise<GetMyClassCoursesResult> {
+  const { semesterKey, keyword, sort, pageSize } = params;
+
+  const where: Prisma.CourseOfferingWhereInput = {
+    ...(semesterKey ? { semesterKey } : {}),
+    ...(keyword
+      ? {
+          OR: [
+            { courseName: { contains: keyword, mode: "insensitive" } },
+            { teacherName: { contains: keyword, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const total = await prisma.courseOffering.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(normalizePage(params.page), totalPages);
+  const skip = (currentPage - 1) * pageSize;
+
+  const offerings = await prisma.courseOffering.findMany({
+    where,
+    select: {
+      id: true,
+      courseId: true,
+      courseName: true,
+      teacherName: true,
+      semesterKey: true,
+      status: true,
+      endAt: true,
+      createdAt: true,
+    },
+    orderBy: [{ createdAt: "desc" }],
+    skip,
+    take: pageSize,
+  });
+
+  const offeringIds = offerings.map((o) => o.id);
+
+  const activeRounds =
+    offeringIds.length > 0
+      ? await prisma.reviewRound.findMany({
+          where: {
+            offeringId: { in: offeringIds },
+            startsAt: { lte: new Date() },
+            endsAt: { gt: new Date() },
+          },
+          select: { id: true, offeringId: true, endsAt: true },
+        })
+      : [];
+
+  const roundDeadlineByOffering = new Map(activeRounds.map((r) => [r.offeringId, r.endsAt.toISOString()]));
+  const activeRoundIdByOffering = new Map(activeRounds.map((r) => [r.offeringId, r.id]));
+
+  const items: MyClassCourseItem[] = offerings.map((item) => {
+    const fallbackDeadline = new Date(item.createdAt.getTime() + 120 * 24 * 60 * 60 * 1000);
+    return {
+      enrollmentId: item.id,
+      offeringId: item.id,
+      courseId: item.courseId,
+      courseName: item.courseName,
+      viewerRole: "STUDENT" as const,
+      teacher: item.teacherName,
+      term: item.semesterKey,
+      offeringStatus: item.status,
+      location: "",
+      time: "",
+      imageUrl: "#",
+      deadline: roundDeadlineByOffering.get(item.id)
+        ? formatDeadline(new Date(roundDeadlineByOffering.get(item.id)!))
+        : item.endAt
+          ? formatDeadline(item.endAt)
+          : formatDeadline(fallbackDeadline),
+      isEvaluated: false,
+      description: "",
+      credits: "-",
+      inviteCode: null,
+      recentScore: null,
+      reviewCount: 0,
+      activeRoundId: activeRoundIdByOffering.get(item.id) ?? null,
+    };
+  });
+
+  items.sort((left, right) => {
+    const leftTime = new Date(left.deadline).getTime();
+    const rightTime = new Date(right.deadline).getTime();
+    return sort === "asc" ? leftTime - rightTime : rightTime - leftTime;
+  });
+
+  return { items, total, currentPage, totalPages };
 }
 
 async function getTeacherCourses(params: {

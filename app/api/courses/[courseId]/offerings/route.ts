@@ -63,7 +63,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const semesterKey = normalizeSemesterKey(body.semesterKey, getCurrentSemesterKey());
+  const currentSemester = await getCurrentSemesterKey();
+  const semesterKey = normalizeSemesterKey(body.semesterKey, currentSemester);
   const status = normalizeStatus(body.status);
   const startAt = parseIsoDate(body.startAt);
   const endAt = parseIsoDate(body.endAt);

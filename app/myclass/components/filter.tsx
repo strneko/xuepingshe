@@ -6,9 +6,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Search } from "lucide-react";
+import { Search, SkipBack, SkipForward } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +24,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
-export default function Filter() {
+interface FilterProps {
+  isAdmin?: boolean;
+  semesterSequence?: string[];
+  currentSemesterKey?: string;
+}
+
+export default function Filter({ isAdmin = false, semesterSequence = [], currentSemesterKey = "" }: FilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,6 +53,8 @@ export default function Filter() {
   const [createLocation, setCreateLocation] = useState("");
   const [createSchedule, setCreateSchedule] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [advancingSemester, setAdvancingSemester] = useState(false);
+  const [retreatingSemester, setRetreatingSemester] = useState(false);
 
   useEffect(() => {
     setKeyword(keywordParam);
@@ -76,6 +92,56 @@ export default function Filter() {
     setCreateLocation("");
     setCreateSchedule("");
     setIsCreateDialogOpen(true);
+  };
+
+  const handleSemesterChange = (value: string) => {
+    updateParams({ semester: value || null, page: null });
+  };
+
+  const handleAdvanceSemester = async () => {
+    if (advancingSemester) return;
+    setAdvancingSemester(true);
+    try {
+      const response = await fetch("/api/admin/semester", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "advance" }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string; currentSemester?: string };
+      if (!response.ok) {
+        toast.error(payload.message ?? "学期推进失败");
+        return;
+      }
+      toast.success(payload.message ?? `已切换到学期 ${payload.currentSemester ?? ""}`);
+      router.refresh();
+    } catch {
+      toast.error("网络异常，请稍后重试");
+    } finally {
+      setAdvancingSemester(false);
+    }
+  };
+
+  const handleRetreatSemester = async () => {
+    if (retreatingSemester) return;
+    setRetreatingSemester(true);
+    try {
+      const response = await fetch("/api/admin/semester", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "retreat" }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string; currentSemester?: string };
+      if (!response.ok) {
+        toast.error(payload.message ?? "学期回退失败");
+        return;
+      }
+      toast.success(payload.message ?? `已回退到学期 ${payload.currentSemester ?? ""}`);
+      router.refresh();
+    } catch {
+      toast.error("网络异常，请稍后重试");
+    } finally {
+      setRetreatingSemester(false);
+    }
   };
 
   const submitJoin = async () => {
@@ -180,7 +246,49 @@ export default function Filter() {
         />
       </div>
       <div className="ml-auto flex items-center gap-4">
-        {isTeacher ? (
+        {isAdmin ? (
+          <>
+            <Select
+              value={searchParams.get("semester") ?? currentSemesterKey}
+              onValueChange={handleSemesterChange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="选择学期" />
+              </SelectTrigger>
+              <SelectContent>
+                {semesterSequence.map((sem) => (
+                  <SelectItem key={sem} value={sem}>
+                    <span className="flex items-center gap-2">
+                      {sem}
+                      {sem === currentSemesterKey ? (
+                        <Badge variant="secondary" className="text-[10px] px-1.5">当前</Badge>
+                      ) : null}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void handleRetreatSemester()}
+              disabled={retreatingSemester}
+            >
+              <SkipBack className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void handleAdvanceSemester()}
+              disabled={advancingSemester}
+            >
+              <SkipForward className="size-4 mr-1" />
+              {advancingSemester ? "切换中..." : "结束当前学期"}
+            </Button>
+          </>
+        ) : isTeacher ? (
           <Button type="button" size="sm" onClick={openCreateDialog}>
             创建课程
           </Button>

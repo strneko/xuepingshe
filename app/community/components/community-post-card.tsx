@@ -18,7 +18,7 @@ export default function CommunityPostCard({ post, liking = false, onToggleLike, 
   const handleOpenPost = () => {
     onOpenPost?.(post.id);
   };
-  const isEdited = post.updatedAt !== post.createdAt;
+  const isEdited = new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 1000;
   const timeText = isEdited
     ? `编辑于 ${formatRelativeTime(post.updatedAt)}`
     : `发布于 ${formatRelativeTime(post.createdAt)}`;

@@ -4,8 +4,9 @@ import { Separator } from "@/components/ui/separator";
 interface CourseListProps {
   courses: CourseCardProps[];
   keyword?: string;
+  isAdmin?: boolean;
 }
-export default function CoursesList({ courses: classes, keyword = "" }: CourseListProps) {
+export default function CoursesList({ courses: classes, keyword = "", isAdmin = false }: CourseListProps) {
   if (classes.length === 0) {
     return (
       <div className="px-[10vw] py-10">
@@ -42,6 +43,7 @@ export default function CoursesList({ courses: classes, keyword = "" }: CourseLi
               reviewCount={course.reviewCount}
               activeRoundId={course.activeRoundId}
               keyword={keyword}
+              isAdmin={isAdmin}
             />
             {index < classes.length - 1 ? <Separator /> : null}
           </div>

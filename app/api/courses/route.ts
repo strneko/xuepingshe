@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "课程名称、教师、简介、地点、时间均为必填" }, { status: 400 });
   }
 
-  const semesterKey = getCurrentSemesterKey();
+  const semesterKey = await getCurrentSemesterKey();
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const courseId = generateCourseId();

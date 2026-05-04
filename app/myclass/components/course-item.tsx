@@ -20,6 +20,7 @@ import {
 
 interface MyClassCourseCardProps extends CourseCardProps {
   keyword?: string;
+  isAdmin?: boolean;
 }
 
 export function CourseCard({
@@ -44,6 +45,7 @@ export function CourseCard({
   reviewCount = 0,
   activeRoundId = null,
   keyword = "",
+  isAdmin = false,
 }: MyClassCourseCardProps) {
   const [isEvaluationOpen, setIsEvaluationOpen] = useState(false);
   const [evaluated, setEvaluated] = useState(isEvaluated);
@@ -53,7 +55,7 @@ export function CourseCard({
   const [statusDialogAction, setStatusDialogAction] = useState<"OPEN" | "CLOSED" | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isRoundManagementOpen, setIsRoundManagementOpen] = useState(false);
-  const isTeacherView = viewerRole === "TEACHER";
+  const isTeacherView = viewerRole === "TEACHER" || isAdmin;
   const canEvaluate = courseStatus === "OPEN" && !evaluated && activeRoundId !== null;
   const nextStatusAction = courseStatus === "OPEN" ? "CLOSED" : "OPEN";
   const statusToggleLabel = courseStatus === "OPEN" ? "结课" : "开课";

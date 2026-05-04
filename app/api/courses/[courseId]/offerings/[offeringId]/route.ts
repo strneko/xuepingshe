@@ -59,10 +59,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+  const targetStatus = normalizeStatus(body.status);
+
+  if (targetStatus === "CLOSED") {
+    const activeRounds = await prisma.reviewRound.count({
+      where: {
+        offeringId,
+        startsAt: { lte: new Date() },
+        endsAt: { gt: new Date() },
+      },
+    });
+
+    if (activeRounds > 0) {
+      return NextResponse.json(
+        { message: "该开课存在进行中的评教轮次，无法结课" },
+        { status: 409 },
+      );
+    }
+  }
+
   const updated = await prisma.courseOffering.update({
     where: { id: offering.id },
     data: {
-      status: normalizeStatus(body.status),
+      status: targetStatus,
       startAt: parseIsoDate(body.startAt),
       endAt: parseIsoDate(body.endAt),
       forceClosedAt: parseIsoDate(body.forceClosedAt),
