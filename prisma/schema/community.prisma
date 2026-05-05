@@ -147,8 +147,9 @@ model CommunityAnnouncement {
   href      String?
   pinned    Boolean                   @default(true)
   status    CommunityAnnouncementStatus @default(PUBLISHED)
+  sortOrder Int                       @default(0)
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @updatedAt
 
-  @@index([status, pinned, createdAt])
+  @@index([status, pinned, sortOrder, createdAt])
 }

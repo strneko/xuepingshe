@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/auth/admin";
 
 import type { UserProfile } from "@/lib/stores/auth-store";
 
@@ -51,6 +52,7 @@ export const buildUserProfile = cache(async (userId: string): Promise<UserProfil
     nickname: user.name ?? "匿名同学",
     avatarUrl: user.avatarUrl ?? undefined,
     role: user.role,
+    isAdmin: isAdmin(user.id),
     reviewCount: (user._count.courseReviews ?? 0) + (user._count.teacherReviews ?? 0),
     likedCount: likedSummary._sum.likeCount ?? 0,
     followingCount,

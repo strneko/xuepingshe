@@ -5,6 +5,7 @@ export interface UserProfile {
   nickname: string;
   avatarUrl?: string;
   role: "STUDENT" | "TEACHER";
+  isAdmin?: boolean;
   reviewCount: number;
   likedCount: number;
   followingCount: number;

@@ -5,6 +5,7 @@ export type CommunityAnnouncement = {
   title: string;
   href?: string;
   pinned: boolean;
+  sortOrder: number;
 };
 
 export type CommunityPost = {

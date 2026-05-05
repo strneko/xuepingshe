@@ -6,18 +6,21 @@ export const communityAnnouncements: CommunityAnnouncement[] = [
     title: "关于课程评价规范的公告：禁止发布人身攻击内容",
     href: "/community/notice/1",
     pinned: true,
+    sortOrder: 0,
   },
   {
     id: "a2",
     title: "本周热门课程榜单已更新，欢迎参与讨论",
     href: "/community/notice/2",
     pinned: true,
+    sortOrder: 1,
   },
   {
     id: "a3",
     title: "社区功能升级：支持帖子带图与话题标签",
     href: "/community/notice/3",
     pinned: true,
+    sortOrder: 2,
   },
 ];
 

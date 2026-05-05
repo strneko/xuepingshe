@@ -10,13 +10,14 @@ export async function GET(request: NextRequest) {
       where: {
         status: "PUBLISHED",
       },
-      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ pinned: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }],
       take: limit,
       select: {
         id: true,
         title: true,
         href: true,
         pinned: true,
+        sortOrder: true,
       },
     });
 

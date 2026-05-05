@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 type CommunitySubnavProps = {
   activeTab: CommunitySortTab;
   onTabChange: (tab: CommunitySortTab) => void;
+  isAdmin?: boolean;
+  onNewAnnouncement?: () => void;
 };
 
 const tabItems: Array<{ key: CommunitySortTab; label: string }> = [
@@ -17,7 +19,7 @@ const tabItems: Array<{ key: CommunitySortTab; label: string }> = [
   { key: "hot", label: "热门" },
 ];
 
-export default function CommunitySubnav({ activeTab, onTabChange }: CommunitySubnavProps) {
+export default function CommunitySubnav({ activeTab, onTabChange, isAdmin = false, onNewAnnouncement }: CommunitySubnavProps) {
   return (
     <section className="flex items-center justify-between gap-3  bg-card px-4 py-3">
       <div className="flex items-center gap-2">
@@ -36,12 +38,19 @@ export default function CommunitySubnav({ activeTab, onTabChange }: CommunitySub
         ))}
       </div>
 
-      <Button asChild>
-        <Link href="/community/new" className="inline-flex items-center gap-2">
+      {isAdmin ? (
+        <Button onClick={onNewAnnouncement} className="inline-flex items-center gap-2">
           <SquarePen className="size-4" />
-          发布帖子
-        </Link>
-      </Button>
+          发布公告
+        </Button>
+      ) : (
+        <Button asChild>
+          <Link href="/community/new" className="inline-flex items-center gap-2">
+            <SquarePen className="size-4" />
+            发布帖子
+          </Link>
+        </Button>
+      )}
     </section>
   );
 }
