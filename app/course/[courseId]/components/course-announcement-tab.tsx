@@ -69,7 +69,7 @@ export default function CourseAnnouncementTab({
       {pagedAnnouncements.map((item, index) => (
         <div
           key={item.id}
-          className="group relative space-y-1 rounded-xl border border-transparent px-3 py-3 transition-colors hover:bg-gray-100 hover:shadow-[0_12px_30px_rgba(120,120,120,0.18)]"
+          className="group relative space-y-1 rounded-xl border border-transparent px-3 py-3 transition-colors hover:bg-accent/40 hover:shadow-md"
           data-selected={editingAnnouncementId === item.id}
         >
           <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">

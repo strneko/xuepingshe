@@ -26,7 +26,7 @@ export default function CourseHero({ title, teacherId, teacher, intro, location,
               {teacherHref ? (
                 <Link
                   href={teacherHref}
-                  className="group inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition-all duration-200 hover:bg-muted/40 hover:text-foreground hover:shadow-[0_6px_16px_rgba(120,120,120,0.16)]"
+                  className="group inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition-all duration-200 hover:bg-accent/40 hover:text-foreground hover:shadow-md"
                   aria-label={`查看教师 ${teacher} 的主页`}
                   title="查看教师主页"
                 >

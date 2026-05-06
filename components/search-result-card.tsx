@@ -31,7 +31,7 @@ function highlightText(text: string, keyword: string) {
 
   return parts.map((part, index) =>
     part.toLowerCase() === keyword.toLowerCase() ? (
-      <mark key={`${part}-${index}`} className="rounded bg-yellow-100 px-0.5 text-foreground">
+      <mark key={`${part}-${index}`} className="highlight-marker rounded px-0.5">
         {part}
       </mark>
     ) : (

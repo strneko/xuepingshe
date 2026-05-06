@@ -32,7 +32,7 @@ export default function NotificationBell() {
         >
           <Bell className="size-5" />
           {unreadCount > 0 ? (
-            <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1 text-center text-[10px] font-semibold leading-5 text-white">
+            <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-destructive px-1 text-center text-[10px] font-semibold leading-5 text-primary-foreground">
               {unreadLabel}
             </span>
           ) : null}
@@ -65,7 +65,7 @@ export default function NotificationBell() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
-                    {!item.isRead ? <span className="mt-1 size-2 rounded-full bg-red-500" /> : null}
+                    {!item.isRead ? <span className="mt-1 size-2 rounded-full bg-destructive" /> : null}
                   </div>
                   <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.summary}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">{formatRelativeTime(item.createdAt)}</p>

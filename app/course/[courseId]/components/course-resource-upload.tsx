@@ -706,10 +706,10 @@ export default function CourseResourceUpload({ courseId, onUploaded }: CourseRes
                     "inline-flex items-center gap-1 rounded-full px-2 py-0.5",
                     task.status === "completed" && "bg-primary/10 text-primary",
                     task.status === "failed" && "bg-destructive/10 text-destructive",
-                    task.status === "uploading" && "bg-blue-500/10 text-blue-600",
-                    task.status === "hashing" && "bg-amber-500/10 text-amber-600",
-                    task.status === "paused" && "bg-zinc-500/10 text-zinc-600",
-                    task.status === "merging" && "bg-violet-500/10 text-violet-600",
+                    task.status === "uploading" && "bg-blue-100/60 text-blue-700",
+                    task.status === "hashing" && "bg-amber-100/60 text-amber-700",
+                    task.status === "paused" && "bg-muted text-muted-foreground",
+                    task.status === "merging" && "bg-violet-100/60 text-violet-700",
                   )}
                 >
                   {(task.status === "hashing" || task.status === "uploading" || task.status === "merging") && (

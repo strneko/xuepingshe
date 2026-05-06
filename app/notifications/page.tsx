@@ -206,7 +206,7 @@ export default function NotificationsPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="border border-transparent text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:border-red-200 group-hover:bg-red-50 group-hover:text-red-600 hover:bg-red-100 hover:text-red-700 focus-visible:border-red-300 focus-visible:bg-red-100 focus-visible:text-red-700 focus-visible:ring-red-500"
+                        className="border border-transparent text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:border-destructive/30 group-hover:bg-destructive/10 group-hover:text-destructive hover:bg-destructive/20 hover:text-destructive focus-visible:border-destructive/40 focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:ring-destructive"
                         onClick={() => void handleDelete(item.id)}
                         aria-label="删除消息"
                         title="删除消息"

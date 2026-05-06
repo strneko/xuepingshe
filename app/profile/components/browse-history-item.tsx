@@ -11,10 +11,10 @@ export default function BrowseHistoryItem({ item }: BrowseHistoryItemProps) {
   const kindLabel = item.kind === "COURSE" ? "课程" : item.kind === "TEACHER" ? "教师" : "帖子";
   const kindClassName =
     item.kind === "COURSE"
-      ? "bg-blue-50 text-blue-700 border-blue-200"
+      ? "bg-blue-100/50 text-blue-700 border-blue-200/60"
       : item.kind === "TEACHER"
-        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-        : "bg-violet-50 text-violet-700 border-violet-200";
+        ? "bg-emerald-100/50 text-emerald-700 border-emerald-200/60"
+        : "bg-violet-100/50 text-violet-700 border-violet-200/60";
 
   return (
     <Link href={item.href} className="block transition-transform hover:-translate-y-0.5">

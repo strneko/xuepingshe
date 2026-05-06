@@ -14,14 +14,14 @@ function getScoreClass(score: number | null) {
   }
 
   if (score < 3) {
-    return "bg-red-50 text-red-600";
+    return "bg-red-100/50 text-red-700";
   }
 
   if (score < 4) {
-    return "bg-yellow-50 text-yellow-700";
+    return "bg-amber-100/60 text-amber-700";
   }
 
-  return "bg-green-50 text-green-700";
+  return "bg-emerald-100/60 text-emerald-700";
 }
 
 export default function ScoreBox({ score, className, digits = 1, placeholder = "暂无评分" }: ScoreBoxProps) {

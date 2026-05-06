@@ -397,7 +397,7 @@ export default function ShopPage() {
                       已下架
                     </span>
                   ) : null}
-                  <div className="mx-auto mt-8 flex aspect-square w-full max-w-45 items-center justify-center rounded-md bg-linear-to-br from-slate-100 to-slate-200 overflow-hidden">
+                  <div className="mx-auto mt-8 flex aspect-square w-full max-w-45 items-center justify-center rounded-md bg-linear-to-br from-muted/50 to-muted overflow-hidden">
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
@@ -405,7 +405,7 @@ export default function ShopPage() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-sm font-medium text-slate-700">{product.cover}</span>
+                      <span className="text-sm font-medium text-foreground/60">{product.cover}</span>
                     )}
                   </div>
                 </div>

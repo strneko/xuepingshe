@@ -231,7 +231,7 @@ export default function Filter({ isAdmin = false, semesterSequence = [], current
   return (
     <div className="flex w-full items-center gap-4 py-4 px-[10vw]">
       <div className="relative w-[20vw]">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
         <Input
           placeholder="搜索课程名称或教师"
           className="pl-9"
@@ -294,7 +294,7 @@ export default function Filter({ isAdmin = false, semesterSequence = [], current
           </Button>
         ) : (
           <>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-foreground/80">
               <Checkbox
                 checked={onlyUnevaluated}
                 onCheckedChange={(checked) =>

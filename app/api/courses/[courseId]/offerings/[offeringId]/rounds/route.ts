@@ -87,6 +87,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (startsAt >= endsAt) {
     return NextResponse.json({ message: "开始时间必须早于结束时间" }, { status: 400 });
   }
+  if (endsAt <= new Date()) {
+    return NextResponse.json({ message: "截止时间必须在当前时间之后" }, { status: 400 });
+  }
 
   try {
     const round = await prisma.reviewRound.create({

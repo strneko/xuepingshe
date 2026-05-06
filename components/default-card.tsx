@@ -17,7 +17,7 @@ export function DefaultCard({ className }: { className?: string }) {
   return (
     <Dialog>
       <Card className={cn("relative mx-auto w-full max-w-sm pt-0", className)}>
-        <div className="absolute inset-0 z-30 aspect-video bg-black/35" />
+        <div className="absolute inset-0 z-30 aspect-video bg-foreground/20" />
         <img
           src="#"
           alt="Card Image"

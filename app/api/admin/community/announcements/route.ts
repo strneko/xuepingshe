@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth/session";
 import { isAdmin } from "@/lib/auth/admin";
+import { enqueueCommunityAnnouncementPublishedNotification } from "@/lib/community/notifications";
 
 async function requireAdmin(request: NextRequest) {
   const userId = getSessionUserId(request.headers);
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest) {
       status: true,
       createdAt: true,
     },
+  });
+
+  void enqueueCommunityAnnouncementPublishedNotification({
+    announcementId: announcement.id,
+    announcementTitle: announcement.title,
+    actorId: auth.userId,
+  }).catch((error) => {
+    console.error("Failed to enqueue community announcement notification", error);
   });
 
   return NextResponse.json(announcement);

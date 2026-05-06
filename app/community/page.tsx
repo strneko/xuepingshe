@@ -208,9 +208,7 @@ export default function CommunityPage() {
     }
   };
 
-  const handleDeleteAnnouncement = async (item: CommunityAnnouncement) => {
-    if (deleteConfirmId) return;
-    setDeleteConfirmId(item.id);
+  const confirmDeleteAnnouncement = async (item: CommunityAnnouncement) => {
     try {
       const response = await fetch(`/api/admin/community/announcements/${item.id}`, {
         method: "DELETE",
@@ -225,8 +223,6 @@ export default function CommunityPage() {
       await loadAnnouncements();
     } catch {
       toast.error("网络异常，请稍后重试");
-    } finally {
-      setDeleteConfirmId(null);
     }
   };
 
@@ -346,7 +342,7 @@ export default function CommunityPage() {
         items={announcements}
         isAdmin={isAdmin}
         onEdit={openEditAnnouncement}
-        onDelete={handleDeleteAnnouncement}
+        onDelete={(item) => setDeleteConfirmId(item.id)}
         onMoveUp={(item) => void handleMoveAnnouncement(item, -1)}
         onMoveDown={(item) => void handleMoveAnnouncement(item, 1)}
       />
@@ -443,7 +439,7 @@ export default function CommunityPage() {
               variant="destructive"
               onClick={() => {
                 const item = announcements.find((a) => a.id === deleteConfirmId);
-                if (item) void handleDeleteAnnouncement(item);
+                if (item) void confirmDeleteAnnouncement(item);
               }}
             >
               确认删除

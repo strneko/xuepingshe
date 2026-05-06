@@ -132,7 +132,7 @@ function CommentNode({
         <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>{item.author.nickname}</span>
           <span>
-            {new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime() > 1000
+            {new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime() > 5000
               ? `编辑于 ${formatRelativeTime(item.updatedAt)}`
               : formatRelativeTime(item.createdAt)}
           </span>

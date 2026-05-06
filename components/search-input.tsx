@@ -54,12 +54,12 @@ export default function SearchInput({ className, inputClassName, onChange, onKey
     <div className={cn("relative w-[30vw]", className)}>
       <Search
         className="
-        absolute 
-        left-3 
-        top-1/2 
-        transform 
-        -translate-y-1/2 
-        text-gray-400 
+        absolute
+        left-3
+        top-1/2
+        transform
+        -translate-y-1/2
+        text-muted-foreground/50
         h-4 w-4
         pointer-events-none
       "

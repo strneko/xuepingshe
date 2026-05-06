@@ -208,6 +208,10 @@ export default function ReviewRoundManagementDialog({
       toast.error("开始时间必须早于结束时间");
       return;
     }
+    if (new Date(newEndsAt) <= new Date()) {
+      toast.error("截止时间必须在当前时间之后");
+      return;
+    }
 
     setIsAdding(true);
     try {
@@ -320,12 +324,12 @@ export default function ReviewRoundManagementDialog({
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-medium">{round.label}</p>
                   {round.aggregated && (
-                    <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-600">
+                    <span className="shrink-0 rounded bg-emerald-100/60 px-1.5 py-0.5 text-[10px] text-emerald-700">
                       已聚合
                     </span>
                   )}
                   {!round.aggregated && new Date(round.endsAt) < new Date() && (
-                    <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-600">
+                    <span className="shrink-0 rounded bg-amber-100/60 px-1.5 py-0.5 text-[10px] text-amber-700">
                       待聚合
                     </span>
                   )}

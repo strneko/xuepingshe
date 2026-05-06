@@ -94,13 +94,35 @@ function isReviewScoreItem(value: unknown): value is ReviewScoreItem {
   return typeof value.key === "string" && typeof value.label === "string" && typeof value.score === "number";
 }
 
+const DIMENSION_LABEL_MAP: Record<string, string> = {
+  attitude: "教学态度与师德",
+  content: "教学内容与设计",
+  method: "教学方法与技巧",
+  effect: "教学效果与成果",
+  interaction: "师生互动与氛围",
+  resource: "课程资源与评价",
+  improve: "教学创新与改进",
+};
+
 export function parseDetailedScores(value: unknown): ReviewScoreItem[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
+  if (Array.isArray(value)) {
+    const items = value.filter(isReviewScoreItem);
+    return items.length > 0 ? items : undefined;
   }
 
-  const items = value.filter(isReviewScoreItem);
-  return items.length > 0 ? items : undefined;
+  // Handle plain object format: { attitude: 4.8, content: 4.7, ... }
+  if (isRecordLike(value)) {
+    const items: ReviewScoreItem[] = [];
+    for (const [key, label] of Object.entries(DIMENSION_LABEL_MAP)) {
+      const score = value[key];
+      if (typeof score === "number" && !Number.isNaN(score)) {
+        items.push({ key, label, score });
+      }
+    }
+    if (items.length > 0) return items;
+  }
+
+  return undefined;
 }
 
 export function toRecommendedReviewItem(record: RecommendedReviewRecord): ReviewItem {

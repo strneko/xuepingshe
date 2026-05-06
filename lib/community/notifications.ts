@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { enqueueNotification } from "@/lib/notifications/service/enqueue-service";
 import { buildDefaultDedupeKey } from "@/lib/notifications/infra/queue";
 
@@ -98,5 +99,46 @@ export async function enqueueCommunityPostCommentNotification(
       replyToAuthorId: input.replyToAuthorId ?? null,
       action: "comment",
     },
+  });
+}
+
+export async function enqueueCommunityAnnouncementPublishedNotification(input: {
+  announcementId: string;
+  announcementTitle: string;
+  actorId: string;
+}) {
+  const users = await prisma.user.findMany({
+    select: { id: true },
+  });
+
+  const receiverIds = users
+    .map((u) => u.id)
+    .filter((id) => id !== input.actorId);
+
+  if (receiverIds.length === 0) {
+    return;
+  }
+
+  const payload = {
+    announcementId: input.announcementId,
+    announcementTitle: input.announcementTitle,
+    href: "/community",
+    title: "社区发布了新公告",
+    summary: input.announcementTitle,
+  };
+
+  await enqueueNotification({
+    eventType: "community.announcement.published",
+    bizId: input.announcementId,
+    actorId: input.actorId,
+    receiverIds,
+    payload,
+    dedupeKey: buildDefaultDedupeKey({
+      eventType: "community.announcement.published",
+      bizId: input.announcementId,
+      actorId: input.actorId,
+      receiverIds,
+      payload,
+    }),
   });
 }
