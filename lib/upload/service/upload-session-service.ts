@@ -4,7 +4,7 @@ import { UploadError } from "../errors";
 import { findInstantResource, findResourceById } from "../repositories/course-resource-repo";
 import { listUploadedPartNumbers } from "../repositories/upload-part-repo";
 import { createSession, findReusableSession } from "../repositories/upload-session-repo";
-import { getStorageDriver } from "../storage";
+import { getStorageDriver, resolveStorageType } from "../storage";
 import { assertInitInput, buildTempObjectPrefix, createUploadId, getExpiresAt, InitUploadInput } from "./shared";
 
 interface InitUploadSessionInput extends InitUploadInput {
@@ -55,7 +55,7 @@ export async function initUploadSession(input: InitUploadSessionInput) {
       totalChunks: input.totalChunks,
       wholeFileHash: input.wholeFileHash,
       status: "UPLOADING",
-      storageType: "LOCAL_DISK",
+      storageType: resolveStorageType(),
       tempObjectPrefix,
       expiresAt: getExpiresAt(now),
     });
