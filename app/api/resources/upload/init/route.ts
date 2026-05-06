@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initUploadSession } from "@/lib/upload/service/upload-session-service";
 import { toErrorResponse } from "@/lib/upload/errors";
+import { checkUploadInitRateLimit } from "@/lib/upload/service/upload-rate-limit";
 import { getSessionUserId } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
@@ -9,6 +10,8 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ message: "请先登录后再上传资源" }, { status: 401 });
     }
+
+    await checkUploadInitRateLimit(userId);
 
     const body = (await request.json()) as {
       courseId?: string;

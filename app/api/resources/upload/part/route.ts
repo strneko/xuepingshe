@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { toErrorResponse, UploadError } from "@/lib/upload/errors";
 import { uploadPartToSession } from "@/lib/upload/service/upload-part-service";
+import { checkUploadPartRateLimit } from "@/lib/upload/service/upload-rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,8 @@ export async function POST(request: NextRequest) {
     if (!Number.isFinite(partNumber)) {
       throw new UploadError("Part-Number 非法", 400, "INVALID_PART_NUMBER");
     }
+
+    await checkUploadPartRateLimit(uploadId);
 
     const data = Buffer.from(await request.arrayBuffer());
     const result = await uploadPartToSession({

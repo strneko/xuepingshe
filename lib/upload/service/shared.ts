@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import { DEFAULT_MAX_CHUNKS, DEFAULT_MAX_FILE_SIZE, DEFAULT_UPLOAD_EXPIRES_HOURS } from "../constants";
+import { DEFAULT_MAX_CHUNKS, DEFAULT_MAX_CHUNK_SIZE, DEFAULT_MAX_FILE_SIZE, DEFAULT_UPLOAD_EXPIRES_HOURS } from "../constants";
 import { UploadError } from "../errors";
 
 export interface InitUploadInput {
@@ -28,6 +28,9 @@ export function assertInitInput(input: InitUploadInput) {
   }
   if (!Number.isInteger(input.chunkSize) || input.chunkSize <= 0) {
     throw new UploadError("chunkSize 非法", 400, "INVALID_CHUNK_SIZE");
+  }
+  if (input.chunkSize > DEFAULT_MAX_CHUNK_SIZE) {
+    throw new UploadError("分片大小超过限制", 413, "CHUNK_TOO_LARGE");
   }
   if (!Number.isInteger(input.totalChunks) || input.totalChunks <= 0 || input.totalChunks > DEFAULT_MAX_CHUNKS) {
     throw new UploadError("totalChunks 非法", 400, "INVALID_TOTAL_CHUNKS");

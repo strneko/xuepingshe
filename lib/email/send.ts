@@ -1,19 +1,31 @@
-import { Resend } from "resend";
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+import nodemailer from "nodemailer";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
+function createTransport() {
+  // QQ / 163 / Gmail etc. — configure via env vars
+  const host = process.env.SMTP_HOST ?? "smtp.qq.com";
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) return null;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+}
+
 export async function sendVerificationEmail(to: string, token: string) {
   const verifyUrl = `${BASE_URL}/api/auth/verify-email?token=${token}`;
-  let from = "学评社 <noreply@xuepingshe.com>";
-  if (process.env.NODE_ENV === "development") {
-    to = "1058704069@qq.com";
-    from = "onboarding@resend.dev";
-  }
-  if (resend) {
-    await resend.emails.send({
-      from,
+  const transport = createTransport();
+
+  if (transport) {
+    await transport.sendMail({
+      from: process.env.SMTP_FROM ?? process.env.SMTP_USER!,
       to,
       subject: "请验证你的学评社账号邮箱",
       html: `

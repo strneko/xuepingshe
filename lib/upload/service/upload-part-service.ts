@@ -1,3 +1,4 @@
+import { DEFAULT_MAX_CHUNK_SIZE } from "../constants";
 import { UploadError } from "../errors";
 import { findPart, upsertPart } from "../repositories/upload-part-repo";
 import { countUploadedParts, findSessionByUploadId, updateSession } from "../repositories/upload-session-repo";
@@ -39,6 +40,10 @@ export async function uploadPartToSession(input: {
   }
   if (session.status === "MERGING") {
     throw new UploadError("上传会话正在合并", 409, "SESSION_MERGING");
+  }
+
+  if (input.data.length > DEFAULT_MAX_CHUNK_SIZE) {
+    throw new UploadError("分片大小超过限制", 413, "CHUNK_TOO_LARGE");
   }
 
   const computedHash = computeSha256Hex(input.data);
