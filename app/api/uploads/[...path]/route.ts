@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { createReadStream } from "node:fs";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { Readable } from "node:stream";
-import { getUploadLocalRoot } from "@/lib/upload/constants";
+import { getStorageDriver, resolveStorageType } from "@/lib/upload/storage";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -13,10 +11,12 @@ const MIME_MAP: Record<string, string> = {
   jpeg: "image/jpeg",
   gif: "image/gif",
   webp: "image/webp",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
 };
 
 function getMimeType(filePath: string): string {
-  const ext = path.extname(filePath).toLowerCase().replace(".", "");
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
   return MIME_MAP[ext] ?? "application/octet-stream";
 }
 
@@ -26,17 +26,22 @@ export async function GET(
 ) {
   try {
     const { path: pathSegments } = await context.params;
-    const safePath = pathSegments.join("/");
+    const storageKey = pathSegments.join("/");
 
-    if (safePath.includes("..")) {
+    if (storageKey.includes("..")) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const absolutePath = path.join(getUploadLocalRoot(), safePath);
-    await fs.access(absolutePath);
+    // Try to find the resource to get its storage type
+    const resource = await prisma.courseResource.findFirst({
+      where: { storageKey, status: "ACTIVE" },
+      select: { storageType: true },
+    });
 
-    const stream = createReadStream(absolutePath);
-    const mimeType = getMimeType(absolutePath);
+    // Fall back to env-configured storage type for legacy files (e.g. avatars from before schema migration)
+    const driver = getStorageDriver(resource?.storageType ?? resolveStorageType());
+    const stream = await driver.openReadStream(storageKey);
+    const mimeType = getMimeType(storageKey);
 
     return new NextResponse(Readable.toWeb(stream) as unknown as BodyInit, {
       headers: {
