@@ -1,4 +1,5 @@
 import { ResourceStatus } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { HASH_TYPE_SHA256 } from "../constants";
 import { UploadError } from "../errors";
 import { findInstantResource, findResourceById } from "../repositories/course-resource-repo";
@@ -24,9 +25,32 @@ export async function initUploadSession(input: InitUploadSessionInput) {
   if (dedupe?.resource && dedupe.resource.status === ResourceStatus.ACTIVE) {
     const resource = await findResourceById(dedupe.resource.id);
     if (resource) {
+      // Same user — instant success, reuse existing resource record
+      if (resource.uploadedBy === userId) {
+        return {
+          code: "INSTANT_SUCCESS" as const,
+          resourceId: resource.id,
+        };
+      }
+      // Different user — reuse S3 object, create a new resource record for ownership
+      const newResource = await prisma.courseResource.create({
+        data: {
+          courseId: input.courseId,
+          fileName: resource.fileName,
+          mimeType: resource.mimeType,
+          fileSize: resource.fileSize,
+          storageType: resource.storageType,
+          storageBucket: resource.storageBucket,
+          storageKey: resource.storageKey,
+          wholeFileHash: resource.wholeFileHash,
+          status: "ACTIVE",
+          uploader: { connect: { id: userId } },
+        },
+        select: { id: true },
+      });
       return {
         code: "INSTANT_SUCCESS" as const,
-        resourceId: resource.id,
+        resourceId: newResource.id,
       };
     }
   }
