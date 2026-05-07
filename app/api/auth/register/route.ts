@@ -54,11 +54,33 @@ export async function POST(request: NextRequest) {
 
     const existing = await prisma.user.findUnique({
       where: { email },
-      select: { id: true },
+      select: { id: true, emailVerified: true, createdAt: true },
     });
 
     if (existing) {
-      return NextResponse.json({ message: "该邮箱已注册，请直接登录" }, { status: 409 });
+      // Verified user — redirect to login
+      if (existing.emailVerified) {
+        return NextResponse.json({ message: "该邮箱已注册，请直接登录" }, { status: 409 });
+      }
+
+      // Unverified user — only resend if last attempt was > 10 min ago
+      const RESEND_COOLDOWN_MS = 10 * 60 * 1000;
+      const elapsed = Date.now() - existing.createdAt.getTime();
+      if (elapsed < RESEND_COOLDOWN_MS) {
+        const waitMinutes = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 60000);
+        return NextResponse.json(
+          { message: `验证邮件已发送，请 ${waitMinutes} 分钟后再试` },
+          { status: 429 },
+        );
+      }
+
+      // Resend verification email
+      const token = await createVerificationToken(existing.id, email);
+      await sendVerificationEmail(email, token);
+      return NextResponse.json(
+        { message: "验证邮件已重新发送，请查收", email },
+        { status: 200 },
+      );
     }
 
     const passwordHash = await hashPassword(password);
