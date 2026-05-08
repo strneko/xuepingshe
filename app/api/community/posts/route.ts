@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       }
 
       return post;
-    });
+    }, { timeout: 15000 });
 
     return NextResponse.json({
       message: "发布成功",

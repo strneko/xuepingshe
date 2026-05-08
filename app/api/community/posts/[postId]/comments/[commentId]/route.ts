@@ -105,7 +105,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
       const post = await tx.communityPost.findUnique({
         where: { id: postId },
-        select: { likeCount: true, commentCount: true, createdAt: true },
+        select: { likeCount: true, commentCount: true, createdAt: true, updatedAt: true },
       });
 
       if (post) {
@@ -115,6 +115,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
           data: {
             commentCount: nextCommentCount,
             hotScore: computeHotScore(post.likeCount, nextCommentCount, post.createdAt),
+            updatedAt: post.updatedAt,
           },
         });
       }

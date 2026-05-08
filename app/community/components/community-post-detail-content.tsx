@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, ExternalLink, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, ExternalLink } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoSlider } from "react-photo-view";
 import { CommunityComment, CommunityPost } from "@/app/community/_types";
 import { CommentTreeItem, buildCommentTree } from "@/lib/community/comment-tree";
@@ -456,8 +457,18 @@ export default function CommunityPostDetailContent({
 
         <div className="space-y-3">
           {commentsLoading ? (
-            <div className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-              评论加载中...
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-xl border bg-muted/20 px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="size-7 rounded-full" />
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-12 ml-auto" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ))}
             </div>
           ) : tree.length > 0 ? (
             <>
@@ -483,16 +494,27 @@ export default function CommunityPostDetailContent({
                   onDeleteComment={onDeleteComment}
                 />
               ))}
-              {hasMoreComments ? (
+              {commentsLoadingMore ? (
+                <div className="space-y-3 pt-2">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="rounded-xl border bg-muted/20 px-4 py-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="size-7 rounded-full" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : hasMoreComments ? (
                 <div className="flex justify-center pt-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={onLoadMoreComments}
-                    disabled={commentsLoadingMore}
                   >
-                    {commentsLoadingMore ? <Loader2 className="size-4 animate-spin" /> : null}
                     加载更多评论
                   </Button>
                 </div>

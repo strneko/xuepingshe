@@ -40,6 +40,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
           likeCount: true,
           commentCount: true,
           createdAt: true,
+          updatedAt: true,
         },
       });
 
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
           data: {
             likeCount: nextLikeCount,
             hotScore: computeHotScore(nextLikeCount, post.commentCount, post.createdAt),
+            updatedAt: post.updatedAt,
           },
         });
 
@@ -142,6 +144,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         data: {
           likeCount: nextLikeCount,
           hotScore: computeHotScore(nextLikeCount, post.commentCount, post.createdAt),
+          updatedAt: post.updatedAt,
         },
       });
 
