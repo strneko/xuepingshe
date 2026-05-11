@@ -9,6 +9,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import HistoryScoreList from "./history-score-list";
 import CourseAnnouncementTab from "./course-announcement-tab";
 import CourseResourceTab from "./course-resource-tab";
+import AiReviewCard from "@/components/ai-review-card";
 import { Announcement, ResourceItem } from "../_types";
 
 interface CourseTabsProps {
@@ -41,8 +42,8 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
   }, [resources]);
 
   const rawTab = searchParams.get("tab");
-  const activeTab: "announcement" | "resource" | "history" =
-    rawTab === "resource" || rawTab === "history" ? rawTab : "announcement";
+  const activeTab: "announcement" | "resource" | "history" | "ai-review" =
+    rawTab === "resource" || rawTab === "history" || rawTab === "ai-review" ? rawTab : "announcement";
 
   const rawPage = Number(searchParams.get("page") ?? "1");
   const requestedPage = Number.isFinite(rawPage) && rawPage > 0 ? Math.trunc(rawPage) : 1;
@@ -54,11 +55,11 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
     activeTab === "announcement" ? totalAnnouncementPages : activeTab === "resource" ? totalResourcePages : 1;
   const currentPage = Math.min(requestedPage, totalPages);
 
-  const updateQuery = (nextTab: "announcement" | "resource" | "history", nextPage: number) => {
+  const updateQuery = (nextTab: "announcement" | "resource" | "history" | "ai-review", nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", nextTab);
 
-    if (nextPage <= 1 || nextTab === "history") {
+    if (nextPage <= 1 || nextTab === "history" || nextTab === "ai-review") {
       params.delete("page");
     } else {
       params.set("page", String(nextPage));
@@ -77,7 +78,7 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
     [resourceItems, currentPage],
   );
 
-  const switchTab = (tab: "announcement" | "resource" | "history") => {
+  const switchTab = (tab: "announcement" | "resource" | "history" | "ai-review") => {
     updateQuery(tab, 1);
   };
 
@@ -253,10 +254,23 @@ export default function CourseTabs({ courseId, announcements, resources }: Cours
           >
             历史评分
           </Button>
+          <Button
+            variant={activeTab === "ai-review" ? "default" : "outline"}
+            size="sm"
+            onClick={() => switchTab("ai-review")}
+          >
+            AI 点评
+          </Button>
         </ButtonGroup>
       </div>
       {activeTab === "history" ? (
         <HistoryScoreList courseId={courseId} />
+      ) : activeTab === "ai-review" ? (
+        <Card>
+          <CardContent className="px-4 py-4">
+            <AiReviewCard inline fetchUrl={`/api/courses/${courseId}/ai-review`} />
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="px-3">

@@ -533,24 +533,30 @@ async function main() {
   // 14. COMMUNITY ANNOUNCEMENTS
   // ═══════════════════════════════════════════
   console.log("Creating community announcements...");
-  await prisma.communityAnnouncement.create({
-    data: {
+  await prisma.communityAnnouncement.upsert({
+    where: { id: "ann_welcome" },
+    update: {},
+    create: {
+      id: "ann_welcome",
       title: "欢迎来到学评社社区！",
       href: "/community",
       pinned: true,
       sortOrder: 0,
       status: "PUBLISHED",
     },
-  }).catch(() => {});
-  await prisma.communityAnnouncement.create({
-    data: {
+  });
+  await prisma.communityAnnouncement.upsert({
+    where: { id: "ann_rules" },
+    update: {},
+    create: {
+      id: "ann_rules",
       title: "社区发言规范 - 请大家文明讨论",
       href: "/community",
       pinned: true,
       sortOrder: 1,
       status: "PUBLISHED",
     },
-  }).catch(() => {});
+  });
 
   // ═══════════════════════════════════════════
   // 15. SHOP PRODUCTS
@@ -770,38 +776,108 @@ async function main() {
   });
 
   // ═══════════════════════════════════════════
-  // 23. COURSE SCORE HISTORY
+  // 23. COURSE SCORE HISTORY (for trend chart & detail pages)
   // ═══════════════════════════════════════════
   console.log("Creating course score history...");
-  const scoreHistoryCourses = [C.math, C.os];
-  for (const courseId of scoreHistoryCourses) {
-    for (let i = 0; i < 4; i++) {
-      const semesters = [SEMESTER_PREV, `${2024 + Math.floor(i / 2)}-${i % 2 === 0 ? "S1" : "S2"}`];
-      const cursorKey = semesters[0];
+  const semesterLabels = ["2023-2024-1", "2023-2024-2", "2024-2025-1", "2024-2025-2", "2025-2026-1", "2025-2026-2"];
+  const allCourses = Object.values(C);
+  for (const courseId of allCourses) {
+    for (let i = 0; i < semesterLabels.length; i++) {
+      const label = semesterLabels[i];
+      // Deterministic-ish score based on course + semester index
+      const seed = courseId.length + i * 7;
+      const base = 3.6 + ((seed % 13) / 10);
+      const jitter = () => Math.min(5, Math.max(2, base + ((Math.random() - 0.5) * 0.6)));
       await prisma.courseScoreHistory.upsert({
-        where: { courseId_granularity_cursorKey: { courseId, granularity: "SEMESTER", cursorKey } },
+        where: { courseId_granularity_cursorKey: { courseId, granularity: "SEMESTER", cursorKey: label } },
         update: {},
         create: {
           courseId,
           granularity: "SEMESTER",
-          cursorKey,
-          timeLabel: cursorKey,
-          sortOrder: 4 - i,
-          overallScore: 3.5 + Math.random() * 1.5,
-          attitude: 3.5 + Math.random() * 1.5,
-          content: 3.5 + Math.random() * 1.5,
-          method: 3.5 + Math.random() * 1.5,
-          effect: 3.5 + Math.random() * 1.5,
-          interaction: 3.5 + Math.random() * 1.5,
-          resource: 3.5 + Math.random() * 1.5,
-          improve: 3.5 + Math.random() * 1.5,
+          cursorKey: label,
+          timeLabel: label,
+          sortOrder: i,
+          overallScore: Number(jitter().toFixed(2)),
+          attitude: Number(jitter().toFixed(2)),
+          content: Number(jitter().toFixed(2)),
+          method: Number(jitter().toFixed(2)),
+          effect: Number(jitter().toFixed(2)),
+          interaction: Number(jitter().toFixed(2)),
+          resource: Number(jitter().toFixed(2)),
+          improve: Number(jitter().toFixed(2)),
         },
       });
     }
   }
 
   // ═══════════════════════════════════════════
-  // 24. TEACHER COURSES (for teacher-detail page)
+  // 24. TEACHER SCORE HISTORY (for teacher trend chart)
+  // ═══════════════════════════════════════════
+  console.log("Creating teacher score history...");
+  // Map: teacherId -> courseIds they teach
+  const teacherCourseMap = {
+    [U.teacher_zhang]: [C.math, C.physics, C.db],
+    [U.teacher_li]: [C.ds, C.os],
+    [U.teacher_wang]: [C.english],
+  };
+
+  // Pre-build course score lookup: courseId -> label -> scores
+  const courseScoreLookup = {};
+  for (const courseId of allCourses) {
+    courseScoreLookup[courseId] = {};
+    for (const label of semesterLabels) {
+      const seed = courseId.length + semesterLabels.indexOf(label) * 7;
+      const base = 3.6 + ((seed % 13) / 10);
+      const jitter = () => Math.min(5, Math.max(2, base + ((Math.random() - 0.5) * 0.6)));
+      courseScoreLookup[courseId][label] = {
+        overallScore: Number(jitter().toFixed(2)),
+        attitude: Number(jitter().toFixed(2)),
+        content: Number(jitter().toFixed(2)),
+        method: Number(jitter().toFixed(2)),
+        effect: Number(jitter().toFixed(2)),
+        interaction: Number(jitter().toFixed(2)),
+        resource: Number(jitter().toFixed(2)),
+        improve: Number(jitter().toFixed(2)),
+      };
+    }
+  }
+
+  for (const [teacherId, courseIds] of Object.entries(teacherCourseMap)) {
+    for (let i = 0; i < semesterLabels.length; i++) {
+      const label = semesterLabels[i];
+      // Average scores across all courses taught by this teacher for this semester
+      const courseScores = courseIds.map((cid) => courseScoreLookup[cid]?.[label]).filter(Boolean);
+      if (courseScores.length === 0) continue;
+
+      const avg = (key) => {
+        const vals = courseScores.map((s) => s[key]).filter((v) => v != null);
+        return vals.length > 0 ? Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : null;
+      };
+
+      await prisma.teacherScoreHistory.upsert({
+        where: { teacherId_granularity_cursorKey: { teacherId, granularity: "SEMESTER", cursorKey: label } },
+        update: {},
+        create: {
+          teacherId,
+          granularity: "SEMESTER",
+          cursorKey: label,
+          timeLabel: label,
+          sortOrder: i,
+          overallScore: avg("overallScore"),
+          attitude: avg("attitude"),
+          content: avg("content"),
+          method: avg("method"),
+          effect: avg("effect"),
+          interaction: avg("interaction"),
+          resource: avg("resource"),
+          improve: avg("improve"),
+        },
+      });
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // 25. TEACHER COURSES (for teacher-detail page)
   // ═══════════════════════════════════════════
   console.log("Creating teacher-course links...");
   const teacherCourses = [
@@ -821,7 +897,7 @@ async function main() {
   }
 
   // ═══════════════════════════════════════════
-  // 25. SAMPLE NOTIFICATIONS
+  // 26. SAMPLE NOTIFICATIONS
   // ═══════════════════════════════════════════
   console.log("Creating sample notifications...");
   const notificationData = [

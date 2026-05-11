@@ -3,7 +3,7 @@ import CourseReviewCompose from "./components/course-review-compose";
 import CourseTabs from "./components/course-tabs";
 import CourseReviewSection from "./components/course-review-section";
 import ScoreOverviewCard from "./components/score-overview-card";
-import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
+import ScoreTrendChart from "@/components/score-trend-chart";
 import { getCourseDetail } from "./_data/get-course-detail";
 import { headers } from "next/headers";
 import { getSessionUserId } from "@/lib/auth/session";
@@ -141,8 +141,10 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <ScoreTrendChart
+            fetchUrl={`/api/courses/${detail.courseId}/score-history`}
+          />
           <ScoreOverviewCard overallScore={detail.recentOverallScore} dimensions={detail.recentSevenScores} />
-          <TopReviewsCarouselPanel fetchUrl={`/api/courses/${detail.courseId}/top-reviews`} />
         </aside>
       </div>
     </main>

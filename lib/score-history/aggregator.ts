@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { syncScoreSnapshots, syncTeacherSearchDocument } from "@/lib/search/sync";
+import { markAiReviewStale } from "@/lib/ai/generate-review";
 
 const HALF_LIFE_DAYS = 30;
 const DIMENSION_KEYS = [
@@ -196,6 +197,8 @@ export async function aggregateRound(roundId: string): Promise<boolean> {
 
   // Sync search document score snapshots (best-effort)
   syncScoreSnapshots(round.courseId).catch(() => {});
+  // Mark AI review stale so it regenerates with new score data
+  markAiReviewStale("COURSE", round.courseId).catch(() => {});
 
   return true;
 }
@@ -346,6 +349,8 @@ async function deriveTeacherScores(offeringId: string, roundLabel: string): Prom
 
     // Sync teacher search document (best-effort)
     syncTeacherSearchDocument(teacherId).catch(() => {});
+    // Mark AI review stale so it regenerates with new score data
+    markAiReviewStale("TEACHER", teacherId).catch(() => {});
   }
 }
 

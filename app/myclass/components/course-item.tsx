@@ -8,6 +8,7 @@ import EvaluationDialog, { type EvaluationSubmitPayload } from "./evaluation-dia
 import ReviewRoundManagementDialog from "./review-round-management-dialog";
 import SearchResultCard from "@/components/search-result-card";
 import ScoreBox from "@/components/score-box";
+import ScoreTrendChart from "@/components/score-trend-chart";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 interface MyClassCourseCardProps extends CourseCardProps {
   keyword?: string;
   isAdmin?: boolean;
+  trendData?: CourseCardProps["trendData"];
 }
 
 export function CourseCard({
@@ -46,6 +48,7 @@ export function CourseCard({
   activeRoundId = null,
   keyword = "",
   isAdmin = false,
+  trendData,
 }: MyClassCourseCardProps) {
   const [isEvaluationOpen, setIsEvaluationOpen] = useState(false);
   const [evaluated, setEvaluated] = useState(isEvaluated);
@@ -160,6 +163,11 @@ export function CourseCard({
         snippet={description}
         keyword={keyword}
         borderless
+        sparklineSlot={
+          trendData && trendData.length >= 2 ? (
+            <ScoreTrendChart data={trendData} compact className="my-1" />
+          ) : null
+        }
         actionSlot={
           isTeacherView ? (
             <div className="flex w-44 flex-col items-end gap-2 text-right">

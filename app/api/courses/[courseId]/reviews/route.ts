@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCourseReviewsPage } from "../../../../course/[courseId]/_data/get-course-detail";
 import { getSessionUserId } from "@/lib/auth/session";
+import { markAiReviewStale } from "@/lib/ai/generate-review";
 
 function normalizeString(value: unknown, fallback = "") {
   return typeof value === "string" ? value.trim() : fallback;
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       detailedScoresJson: true,
     },
   });
+
+  // Mark AI review stale so it regenerates with new review data
+  markAiReviewStale("COURSE", courseId).catch(() => {});
 
   return NextResponse.json({
     id: review.id,

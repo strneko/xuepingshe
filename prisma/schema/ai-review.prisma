@@ -1,0 +1,16 @@
+enum AIReviewTargetType {
+  COURSE
+  TEACHER
+}
+
+model AIReviewCache {
+  id          String             @id @default(cuid())
+  targetType  AIReviewTargetType
+  targetId    String
+  content     String?
+  generatedAt DateTime           @default(now())
+  staleAt     DateTime?
+  dataHash    String             @default("")
+
+  @@unique([targetType, targetId])
+}

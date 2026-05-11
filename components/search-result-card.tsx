@@ -17,6 +17,7 @@ interface SearchResultCardProps {
   snippet?: string;
   keyword?: string;
   actionSlot?: React.ReactNode;
+  sparklineSlot?: React.ReactNode;
   borderless?: boolean;
 }
 
@@ -51,6 +52,7 @@ export default function SearchResultCard({
   snippet,
   keyword = "",
   actionSlot,
+  sparklineSlot,
   borderless = false,
 }: SearchResultCardProps) {
   return (
@@ -76,6 +78,7 @@ export default function SearchResultCard({
                 综合评分 <ScoreBox score={score} digits={1} className="align-middle" /> · 评价 {reviewCount}
               </p>
             )}
+            {sparklineSlot}
             {snippet && <p className="line-clamp-2">{highlightText(snippet, keyword)}</p>}
           </CardContent>
         </Link>

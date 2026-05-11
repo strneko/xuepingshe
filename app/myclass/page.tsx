@@ -7,6 +7,18 @@ import { headers } from "next/headers";
 import { getSessionUserId } from "@/lib/auth/session";
 import { isAdmin } from "@/lib/auth/admin";
 
+export interface TrendDataPoint {
+  timeLabel: string;
+  overallScore: number | null;
+  attitude: number | null;
+  content: number | null;
+  method: number | null;
+  effect: number | null;
+  interaction: number | null;
+  resource: number | null;
+  improve: number | null;
+}
+
 export interface CourseCardProps {
   enrollmentId: string;
   offeringId: string;
@@ -28,6 +40,7 @@ export interface CourseCardProps {
   recentScore?: number | null;
   reviewCount?: number;
   activeRoundId?: string | null;
+  trendData?: TrendDataPoint[];
 }
 
 interface MyClassPageProps {

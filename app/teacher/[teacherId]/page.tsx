@@ -1,6 +1,6 @@
 import CourseReviewSection from "../../course/[courseId]/components/course-review-section";
 import ScoreOverviewCard from "../../course/[courseId]/components/score-overview-card";
-import TopReviewsCarouselPanel from "@/components/top-reviews-carousel-panel";
+import ScoreTrendChart from "@/components/score-trend-chart";
 import { getTeacherDetail } from "./_data/get-teacher-detail";
 import TeacherHero from "./components/teacher-hero";
 import TeacherHistoryCourses from "./components/teacher-history-courses";
@@ -54,12 +54,10 @@ export default async function TeacherDetailPage({ params }: TeacherDetailPagePro
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <ScoreOverviewCard overallScore={detail.recentOverallScore} dimensions={detail.recentSevenScores} />
-          <TopReviewsCarouselPanel
-            fetchUrl={`/api/teachers/${detail.teacherId}/top-reviews`}
-            showSourceCourse
-            showSourceTeacher
+          <ScoreTrendChart
+            fetchUrl={`/api/teachers/${detail.teacherId}/score-history`}
           />
+          <ScoreOverviewCard overallScore={detail.recentOverallScore} dimensions={detail.recentSevenScores} />
         </aside>
       </div>
     </main>

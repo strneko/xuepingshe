@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import ScoreBox from "@/components/score-box";
+import AiReviewCard from "@/components/ai-review-card";
 import { HistoryScoreItem, HistoryScorePageResult, ScoreHistoryGranularity } from "../../../course/[courseId]/_types";
 import TeacherCoursesList from "./teacher-courses-list";
 
@@ -13,11 +14,12 @@ interface TeacherHistoryCoursesProps {
   initialHistoryScores: HistoryScorePageResult;
 }
 
-type ViewType = "history" | "courses";
+type ViewType = "history" | "courses" | "ai-review";
 
 const VIEW_OPTIONS: { key: ViewType; label: string }[] = [
   { key: "courses", label: "教授课程" },
   { key: "history", label: "历史评分" },
+  { key: "ai-review", label: "AI 点评" },
 ];
 
 const GRANULARITY_OPTIONS: { key: ScoreHistoryGranularity; label: string }[] = [
@@ -45,7 +47,7 @@ export default function TeacherHistoryCourses({ teacherId, initialHistoryScores 
   const searchParams = useSearchParams();
 
   const rawView = searchParams.get("tab");
-  const view: ViewType = rawView === "history" ? "history" : "courses";
+  const view: ViewType = rawView === "history" ? "history" : rawView === "ai-review" ? "ai-review" : "courses";
 
   const rawGranularity = searchParams.get("granularity");
   const granularity: ScoreHistoryGranularity =
@@ -275,6 +277,10 @@ export default function TeacherHistoryCourses({ teacherId, initialHistoryScores 
 
           {!error && footerText && <p className="text-center text-xs text-muted-foreground">{footerText}</p>}
         </>
+      ) : view === "ai-review" ? (
+        <div className="rounded-md border bg-card p-4">
+          <AiReviewCard inline fetchUrl={`/api/teachers/${teacherId}/ai-review`} />
+        </div>
       ) : (
         <TeacherCoursesList teacherId={teacherId} />
       )}
